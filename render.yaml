@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: templo-gira
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn templo_project.wsgi:application
+    envVars:
+      - key: SECRET_KEY
+        value: django-templo-gira-2025
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: DATABASE_URL
+        value: postgresql://templo_db_user:xou8qlLKgTv465XiFtquaSmtTzOZXoRV@dpg-d45pdajipnbc738qpv8g-a/templo_db
+    autoDeploy: true
+    preDeployCommand: |
+      python manage.py migrate --noinput
