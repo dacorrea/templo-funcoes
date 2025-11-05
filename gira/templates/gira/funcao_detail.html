@@ -1,0 +1,36 @@
+{% extends 'gira/base.html' %}
+{% block content %}
+<div class="container">
+  <a href="{% url 'gira:lista_funcoes' %}">← Voltar</a>
+  <h3>{{ f.posicao }} - {{ f.tipo }}</h3>
+  <p>{{ f.descricao }}</p>
+  <p><strong>Medium de linha:</strong> {{ f.medium_de_linha.nome if f.medium_de_linha }}</p>
+  <p><strong>Pessoa:</strong> {{ f.pessoa.nome if f.pessoa }}</p>
+
+  {% if user.role == 'admin' %}
+    <form method="post">{% csrf_token %}
+      <div class="mb-2">
+        <label class="form-label">Medium de linha</label>
+        <select name="medium_de_linha" class="form-select">
+          <option value="">--</option>
+          {% for m in Medium.objects.all %}<option value="{{ m.id }}" {% if f.medium_de_linha and f.medium_de_linha.id==m.id %}selected{% endif %}>{{ m.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Pessoa</label>
+        <select name="pessoa" class="form-select">
+          <option value="">--</option>
+          {% for u in users %}<option value="{{ u.id }}" {% if f.pessoa and f.pessoa.id==u.id %}selected{% endif %}>{{ u.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-primary">Salvar</button>
+    </form>
+  {% elif f.status == 'Vaga' and f.tipo != 'Cambones' %}
+    <form method="post" action="{% url 'gira:assumir_funcao' f.pk %}">{% csrf_token %}
+      <button class="btn btn-success">Assumir Função</button>
+    </form>
+  {% else %}
+    <p>Esta função não pode ser assumida.</p>
+  {% endif %}
+</div>
+{% endblock %}

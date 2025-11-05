@@ -1,0 +1,14 @@
+{% extends 'gira/base.html' %}
+{% block content %}
+<div class="container">
+  <h3>Criar Gira</h3>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="mb-2">
+      <label class="form-label">Funções (uma por linha: TIPO;POSICAO;DESCRICAO)</label>
+      <textarea name="functions_csv" class="form-control" rows="6" placeholder="Cambones;Pai João;Descrição"></textarea>
+    </div>
+    <button class="btn btn-primary">Criar</button>
+  </form>
+</div>
+{% endblock %}
