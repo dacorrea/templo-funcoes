@@ -8,6 +8,15 @@ from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from .models import User
 
+from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+
+def test_user_list(request):
+    User = get_user_model()
+    users = User.objects.all()
+    return HttpResponse("<br>".join([f"{u.id} - {u.celular}" for u in users]))
+
+
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
