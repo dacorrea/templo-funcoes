@@ -4,24 +4,25 @@ from .forms import LoginPhoneForm, GiraForm, FuncaoEditForm
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import logout
-
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
-from django.contrib import messages
 from .models import User
 
 def login_view(request):
     if request.method == 'POST':
-        celular = request.POST.get('celular')
-        password = request.POST.get('password')
-        user = authenticate(request, celular=celular, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('home')
-        else:
-            messages.error(request, 'Celular ou senha incorretos.')
-    return render(request, 'gira/login.html')
-
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            celular = form.cleaned_data['celular']
+            # Como o login é só pelo celular, sem senha:
+            user = authenticate(request, celular=celular)
+            if user is not None:
+                login(request, user)
+                return redirect('home')
+            else:
+                messages.error(request, 'Celular não encontrado.')
+    else:
+        form = LoginForm()
+    return render(request, 'gira/login.html', {'form': form})
 
 
 def _get_user(request):
