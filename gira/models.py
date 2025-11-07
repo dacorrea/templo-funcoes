@@ -1,5 +1,39 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+
+class UserManager(BaseUserManager):
+    def create_user(self, telefone, password=None, **extra_fields):
+        if not telefone:
+            raise ValueError("O campo telefone é obrigatório")
+        user = self.model(telefone=telefone, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, telefone, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(telefone, password, **extra_fields)
+
+class User(AbstractBaseUser, PermissionsMixin):
+    id = models.BigAutoField(primary_key=True)
+    nome = models.CharField(max_length=100)
+    telefone = models.CharField(max_length=20, unique=True)
+    role = models.CharField(max_length=50, null=True, blank=True)
+    ativo = models.BooleanField(default=True)
+
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    USERNAME_FIELD = 'telefone'
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
+
+    class Meta:
+        db_table = 'users' 
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
