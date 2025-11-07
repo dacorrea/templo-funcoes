@@ -4,6 +4,9 @@ from .forms import LoginPhoneForm, GiraForm, FuncaoEditForm
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import logout
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -11,23 +14,25 @@ def login_view(request):
         if form.is_valid():
             celular = ''.join(ch for ch in form.cleaned_data['celular'] if ch.isdigit())
             try:
-                up = UserProfile.objects.get(celular__endswith=celular, ativo=True)
-                request.session['userprofile_id'] = up.id
+                user = User.objects.get(telefone__endswith=celular, ativo=True)
+                request.session['user_id'] = user.id
                 return redirect('gira:lista_funcoes')
-            except UserProfile.DoesNotExist:
+            except User.DoesNotExist:
                 messages.error(request, 'Usuário não tem permissão de acesso.')
     else:
         form = LoginPhoneForm()
     return render(request, 'gira/login.html', {'form': form})
 
+
 def _get_user(request):
-    uid = request.session.get('userprofile_id')
+    uid = request.session.get('user_id')
     if not uid:
         return None
     try:
-        return UserProfile.objects.get(id=uid)
-    except UserProfile.DoesNotExist:
+        return User.objects.get(id=uid)
+    except User.DoesNotExist:
         return None
+
 
 def lista_funcoes(request):
     user = _get_user(request)
@@ -52,7 +57,7 @@ def funcao_detail(request, pk):
     if not user:
         return redirect('gira:login')
     f = get_object_or_404(Funcao, pk=pk)
-    users = UserProfile.objects.filter(ativo=True)
+    users = user.objects.filter(ativo=True)
     if request.method == 'POST':
         # admin editing
         if user.role == 'admin':
