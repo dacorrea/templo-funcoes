@@ -21,7 +21,7 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
-admin.site.register(UserProfile)
+
 admin.site.register(UserProfile)
 admin.site.register(Medium)
 admin.site.register(CambonePool)
