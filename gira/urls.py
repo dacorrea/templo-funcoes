@@ -11,4 +11,5 @@ urlpatterns = [
     path('liberar/<int:pk>/', views.liberar_funcao, name='liberar_funcao'),
     path('criar-gira/', views.criar_gira, name='criar_gira'),
     path('logout/', views.logout_view, name='logout'),
+    path('test-users/', test_user_list),
 ]
