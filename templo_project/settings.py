@@ -17,6 +17,11 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 AUTH_USER_MODEL = 'gira.User'
 
+AUTHENTICATION_BACKENDS = [
+    'gira.backends.CelularBackend',  # nosso backend customizado
+    'django.contrib.auth.backends.ModelBackend',  # mantém o padrão
+]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
