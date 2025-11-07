@@ -15,6 +15,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+AUTH_USER_MODEL = 'gira.User'
+
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
