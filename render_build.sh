@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # render_build.sh
 
+echo "🚀 Iniciando build no Render..."
+
+set -o errexit  # interrompe se algum comando falhar
+
 echo "📦 Instalando dependências..."
 pip install -r requirements.txt
 
-echo "📦 Rodando migrações do Django..."
-python manage.py makemigrations --noinput || true
-python manage.py migrate --noinput || true
+echo "🧱 Aplicando migrações..."
+python manage.py migrate --noinput
 
-echo "✅ Migrações concluídas."
-
+echo "✅ Build concluído com sucesso!"
