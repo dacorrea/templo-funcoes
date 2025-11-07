@@ -20,7 +20,7 @@ def login_view(request):
             return redirect('home')
         else:
             messages.error(request, 'Celular ou senha incorretos.')
-    return render(request, 'login.html')
+    return render(request, 'gira/login.html', {'form': form})
 
 
 
