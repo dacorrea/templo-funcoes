@@ -1,11 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import UserProfile, Funcao, Gira, Medium, CambonePool, Historico
+from .models import User, UserProfile, Funcao, Gira, Medium, CambonePool, Historico
 from .forms import LoginPhoneForm, GiraForm, FuncaoEditForm
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import logout
-from django.contrib.auth import get_user_model
-User = get_user_model()
 
 
 def login_view(request):
@@ -14,9 +12,18 @@ def login_view(request):
         if form.is_valid():
             celular = ''.join(ch for ch in form.cleaned_data['celular'] if ch.isdigit())
             try:
+                # Tenta encontrar o usuário pelo telefone
                 user = User.objects.get(telefone__endswith=celular, ativo=True)
-                request.session['user_id'] = user.id
+                # Busca o UserProfile correspondente
+                profile = UserProfile.objects.filter(user=user, ativo=True).first()
+                if not profile:
+                    messages.error(request, 'Usuário não possui perfil ativo.')
+                    return render(request, 'gira/login.html', {'form': form})
+
+                # Login simples via sessão
+                request.session['userprofile_id'] = profile.id
                 return redirect('gira:lista_funcoes')
+
             except User.DoesNotExist:
                 messages.error(request, 'Usuário não tem permissão de acesso.')
     else:
@@ -25,12 +32,12 @@ def login_view(request):
 
 
 def _get_user(request):
-    uid = request.session.get('user_id')
+    uid = request.session.get('userprofile_id')
     if not uid:
         return None
     try:
-        return User.objects.get(id=uid)
-    except User.DoesNotExist:
+        return UserProfile.objects.get(id=uid)
+    except UserProfile.DoesNotExist:
         return None
 
 
@@ -38,37 +45,42 @@ def lista_funcoes(request):
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
-    # get latest active Gira (by date)
+
     gira = Gira.objects.order_by('-data_hora').first()
     if not gira:
         messages.info(request, 'Nenhuma gira criada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
-    funcoes = gira.funcoes.all().order_by('tipo','posicao')
+
+    funcoes = gira.funcoes.all().order_by('tipo', 'posicao')
     cambones = funcoes.filter(tipo='Cambones')
     organizacao = funcoes.filter(tipo='Organizacao')
     limpeza = funcoes.filter(tipo='Limpeza')
+
     return render(request, 'gira/lista_funcoes.html', {
         'user': user, 'gira': gira,
         'cambones': cambones, 'organizacao': organizacao, 'limpeza': limpeza
     })
+
 
 def funcao_detail(request, pk):
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
     f = get_object_or_404(Funcao, pk=pk)
-    users = user.objects.filter(ativo=True)
+    users = UserProfile.objects.filter(ativo=True)
     if request.method == 'POST':
-        # admin editing
         if user.role == 'admin':
             form = FuncaoEditForm(request.POST, instance=f)
             if form.is_valid():
                 form.save()
-                Historico.objects.create(gira=f.gira, funcao=f, usuario=user, acao='edit', info={'pessoa': str(f.pessoa.id) if f.pessoa else None})
+                Historico.objects.create(
+                    gira=f.gira, funcao=f, usuario=user, acao='edit',
+                    info={'pessoa': str(f.pessoa.id) if f.pessoa else None}
+                )
                 messages.success(request, 'Salvo.')
                 return redirect('gira:funcao_detail', pk=pk)
-        # regular assume handled in assumir_funcao
     return render(request, 'gira/funcao_detail.html', {'f': f, 'user': user, 'users': users})
+
 
 def assumir_funcao(request, pk):
     user = _get_user(request)
@@ -88,6 +100,7 @@ def assumir_funcao(request, pk):
         messages.warning(request, 'Vaga já preenchida.')
     return redirect('gira:lista_funcoes')
 
+
 def liberar_funcao(request, pk):
     user = _get_user(request)
     if not user or user.role != 'admin':
@@ -101,6 +114,7 @@ def liberar_funcao(request, pk):
     messages.success(request, 'Vaga liberada.')
     return redirect('gira:lista_funcoes')
 
+
 def criar_gira(request):
     user = _get_user(request)
     if not user or user.role != 'admin':
@@ -112,14 +126,12 @@ def criar_gira(request):
             gira = form.save(commit=False)
             gira.criado_por = user
             gira.save()
-            # create functions based on posted structure (expect a simple CSV in textarea or later UI)
-            # For simplicity here: expect lines like: tipo;posicao;descricao
-            lines = request.POST.get('functions_csv','').splitlines()
-            for i,l in enumerate(lines):
+            lines = request.POST.get('functions_csv', '').splitlines()
+            for i, l in enumerate(lines):
                 parts = [p.strip() for p in l.split(';')]
                 if len(parts) >= 2:
                     tipo, pos = parts[0], parts[1]
-                    Funcao.objects.create(gira=gira, chave=f"{gira.id}-{i}", tipo=tipo, posicao=pos, descricao=parts[2] if len(parts)>2 else '')
+                    Funcao.objects.create(gira=gira, chave=f"{gira.id}-{i}", tipo=tipo, posicao=pos, descricao=parts[2] if len(parts) > 2 else '')
             messages.success(request, 'Gira criada.')
             return redirect('gira:lista_funcoes')
     else:
@@ -127,6 +139,7 @@ def criar_gira(request):
     mediums = Medium.objects.filter(habilitado=True)
     cambones = CambonePool.objects.filter(ativo=True).order_by('ordem')
     return render(request, 'gira/criar_gira.html', {'form': form, 'mediums': mediums, 'cambones': cambones})
+
 
 def logout_view(request):
     request.session.pop('userprofile_id', None)
