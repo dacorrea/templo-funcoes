@@ -5,30 +5,23 @@ from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import logout
 
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import User
 
 def login_view(request):
     if request.method == 'POST':
-        form = LoginPhoneForm(request.POST)
-        if form.is_valid():
-            celular = ''.join(ch for ch in form.cleaned_data['celular'] if ch.isdigit())
-            try:
-                # Tenta encontrar o usuário pelo telefone
-                user = User.objects.get(telefone__endswith=celular, ativo=True)
-                # Busca o UserProfile correspondente
-                profile = UserProfile.objects.filter(user=user, ativo=True).first()
-                if not profile:
-                    messages.error(request, 'Usuário não possui perfil ativo.')
-                    return render(request, 'gira/login.html', {'form': form})
+        celular = request.POST.get('celular')
+        password = request.POST.get('password')
+        user = authenticate(request, celular=celular, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('home')
+        else:
+            messages.error(request, 'Celular ou senha incorretos.')
+    return render(request, 'login.html')
 
-                # Login simples via sessão
-                request.session['userprofile_id'] = profile.id
-                return redirect('gira:lista_funcoes')
-
-            except User.DoesNotExist:
-                messages.error(request, 'Usuário não tem permissão de acesso.')
-    else:
-        form = LoginPhoneForm()
-    return render(request, 'gira/login.html', {'form': form})
 
 
 def _get_user(request):
