@@ -1,55 +1,48 @@
-from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+from django.utils import timezone
 
-
-# ----------- USER PRINCIPAL (login com telefone) -----------
+# Gerenciador customizado para criar usuários com celular
 class UserManager(BaseUserManager):
-    def create_user(self, telefone, password=None, **extra_fields):
-        if not telefone:
-            raise ValueError("O campo telefone é obrigatório")
-        user = self.model(telefone=telefone, **extra_fields)
+    def create_user(self, celular, password=None, **extra_fields):
+        if not celular:
+            raise ValueError('O campo celular é obrigatório.')
+        user = self.model(celular=celular, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, telefone, password=None, **extra_fields):
+    def create_superuser(self, celular, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(telefone, password, **extra_fields)
+        return self.create_user(celular, password, **extra_fields)
 
-
+# Modelo principal de usuário
 class User(AbstractBaseUser, PermissionsMixin):
-    id = models.BigAutoField(primary_key=True)
-    nome = models.CharField(max_length=100)
-    telefone = models.CharField(max_length=20, unique=True)
-    role = models.CharField(max_length=50, null=True, blank=True)
-    ativo = models.BooleanField(default=True)
-
-    is_staff = models.BooleanField(default=False)
+    celular = models.CharField(max_length=15, unique=True)
+    nome = models.CharField(max_length=100, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(default=timezone.now)
 
-    USERNAME_FIELD = 'telefone'
-    REQUIRED_FIELDS = []
+    USERNAME_FIELD = 'celular'
+    REQUIRED_FIELDS = []  # só o celular é obrigatório
 
     objects = UserManager()
 
-    class Meta:
-        db_table = 'users'
-
     def __str__(self):
-        return self.nome
+        return self.celular
 
-
-# ----------- USERPROFILE (complemento de informações) -----------
+# Caso você queira manter perfis adicionais
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
-    nome = models.CharField(max_length=150)
-    celular = models.CharField(max_length=20, unique=True)
-    role = models.CharField(max_length=10, choices=(('admin', 'admin'), ('user', 'user')), default='user')
-    ativo = models.BooleanField(default=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    foto = models.ImageField(upload_to='fotos/', blank=True, null=True)
+    data_nascimento = models.DateField(blank=True, null=True)
 
     def __str__(self):
-        return self.nome
+        return self.user.celular
+
 
 
 # ----------- DEMAIS MODELOS -----------
