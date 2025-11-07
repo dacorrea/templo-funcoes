@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import User, UserProfile, Funcao, Gira, Medium, CambonePool, Historico
-from .forms import LoginPhoneForm, GiraForm, FuncaoEditForm
+from .forms import LoginPhoneForm, GiraForm, FuncaoEditForm, LoginForm
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import logout
