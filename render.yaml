@@ -3,7 +3,7 @@ services:
     name: templo-gira
     env: python
     plan: free
-    buildCommand: "./render_build.sh"
+    buildCommand: "./render_buil.sh"
     startCommand: "gunicorn templo_project.wsgi:application"
     envVars:
       - key: SECRET_KEY
