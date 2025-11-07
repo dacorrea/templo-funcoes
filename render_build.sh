@@ -6,7 +6,7 @@ echo "🚀 Iniciando build no Render..."
 set -o errexit  # interrompe se algum comando falhar
 
 echo "📦 Instalando dependências..."
-pip install -r requirements.txt
+# pip install -r requirements.txt
 
 echo "🧱 Aplicando migrações..."
 python manage.py migrate --noinput
