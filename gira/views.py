@@ -16,6 +16,14 @@ def test_user_list(request):
     users = User.objects.all()
     return HttpResponse("<br>".join([f"{u.id} - {u.celular}" for u in users]))
 
+from django.http import HttpResponse
+from django.core.management import call_command
+
+def migrate_now(request):
+    call_command('migrate')
+    return HttpResponse("Migrações aplicadas.")
+
+
 
 def login_view(request):
     if request.method == 'POST':
