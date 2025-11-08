@@ -37,8 +37,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 # Caso você queira manter perfis adicionais
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    foto = models.ImageField(upload_to='fotos/', blank=True, null=True)
-    data_nascimento = models.DateField(blank=True, null=True)
+   # foto = models.ImageField(upload_to='fotos/', blank=True, null=True)
+    #data_nascimento = models.DateField(blank=True, null=True)
 
     def __str__(self):
         return self.user.celular
