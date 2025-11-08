@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from .views import login_view, test_user_list 
 
-app_name = 'gira'
+#app_name = 'gira'
 
 urlpatterns = [
     path('', views.login_view, name='login'),
