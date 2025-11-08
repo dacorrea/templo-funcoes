@@ -34,7 +34,7 @@ def login_view(request):
             user = authenticate(request, celular=celular)
             if user is not None:
                 login(request, user)
-                return redirect('lista_funcoes')
+                return redirect('gira:lista_funcoes')
             else:
                 messages.error(request, 'Celular não encontrado.')
     else:
