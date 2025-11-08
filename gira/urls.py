@@ -5,9 +5,7 @@ from .views import login_view, test_user_list
 app_name = 'gira'
 
 urlpatterns = [
-   # path('', views.login_view, name='login'),
-    path('', views.login_view, name='lista_funcoes'),
-
+    path('', views.login_view, name='login'),
     path('funcoes/', views.lista_funcoes, name='lista_funcoes'),
     path('funcao/<int:pk>/', views.funcao_detail, name='funcao_detail'),
     path('assumir/<int:pk>/', views.assumir_funcao, name='assumir_funcao'),
