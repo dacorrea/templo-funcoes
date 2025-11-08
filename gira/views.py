@@ -24,22 +24,56 @@ def migrate_now(request):
     return HttpResponse("Migrações aplicadas.")
 
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from .forms import LoginForm
+from .models import User, UserProfile
 
 def login_view(request):
+    """
+    Login apenas por celular (sem senha).
+    Autentica o User (custom) pelo backend CelularBackend,
+    depois garante que exista um UserProfile ligado e grava
+    request.session['userprofile_id'] para o restante do app.
+    """
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            celular = form.cleaned_data['celular']
-            # Como o login é só pelo celular, sem senha:
+            celular = ''.join(ch for ch in form.cleaned_data['celular'] if ch.isdigit())
+
+            # autentica via backend custom (CelularBackend)
             user = authenticate(request, celular=celular)
             if user is not None:
+                # Django login (opcional — útil para request.user)
                 login(request, user)
+
+                # tenta obter o UserProfile ligado ao User
+                profile = None
+                try:
+                    profile = UserProfile.objects.get(user=user)
+                except UserProfile.DoesNotExist:
+                    # se não existir, cria um perfil mínimo usando dados do User
+                    profile = UserProfile.objects.create(
+                        user=user,
+                        nome=(getattr(user, 'nome', '') or getattr(user, 'name', '') or celular),
+                        celular=celular,
+                        # role: mantenha padrão (user) — ajuste se quiser setar admin manualmente
+                    )
+
+                # grava na sessão o id do UserProfile — _get_user usa essa chave
+                request.session['userprofile_id'] = profile.id
+
+                # redireciona usando namespace correto
                 return redirect('gira:lista_funcoes')
+
             else:
                 messages.error(request, 'Celular não encontrado.')
     else:
         form = LoginForm()
+
     return render(request, 'gira/login.html', {'form': form})
+
 
 
 def _get_user(request):
