@@ -3,6 +3,8 @@ from django.contrib import messages
 from .models import Gira, Funcao
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
+from .models import User
+
 
 
 def check_user_model(request):
