@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Users, Gira, Funcao
+from .models import User, Gira, Funcao
+
 
 def login_view(request):
     """Login apenas por número de celular."""
@@ -8,9 +9,9 @@ def login_view(request):
         celular = ''.join(ch for ch in request.POST.get('celular', '') if ch.isdigit())
 
         try:
-            # Busca o usuário diretamente na tabela Users
-            user = Users.objects.get(telefone=celular, ativo=True)
-        except Users.DoesNotExist:
+            # Busca o usuário diretamente na tabela gira_user
+            user = User.objects.get(telefone=celular, ativo=True)
+        except User.DoesNotExist:
             messages.error(request, 'Celular não encontrado ou usuário inativo.')
             return render(request, 'gira/login.html')
 
@@ -31,8 +32,8 @@ def _get_user(request):
     if not uid:
         return None
     try:
-        return Users.objects.get(id=uid)
-    except Users.DoesNotExist:
+        return User.objects.get(id=uid)
+    except User.DoesNotExist:
         return None
 
 
