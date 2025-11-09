@@ -30,7 +30,7 @@ from django.contrib.auth import authenticate, login
 from .forms import LoginForm
 from .models import User, UserProfile
 
-def login_view(request):
+ddef login_view(request):
     """
     Login apenas por celular (sem senha).
     Autentica o User (custom) pelo backend CelularBackend,
@@ -47,16 +47,19 @@ def login_view(request):
             if user is not None:
                 login(request, user)
 
-                # tenta obter o UserProfile ligado ao User
+                # garante que exista um perfil
                 try:
                     profile = UserProfile.objects.get(user=user)
                 except UserProfile.DoesNotExist:
-                    # cria apenas o perfil básico (sem nome/celular)
-                    profile = UserProfile.objects.create(user=user)
+                    profile = UserProfile.objects.create(
+                        user=user,
+                        nome=user.nome or user.celular
+                    )
 
-                # grava na sessão o id do UserProfile
+                # grava o id do perfil na sessão
                 request.session['userprofile_id'] = profile.id
 
+                # redireciona após login
                 return redirect('gira:lista_funcoes')
             else:
                 messages.error(request, 'Celular não encontrado.')
@@ -64,6 +67,7 @@ def login_view(request):
         form = LoginForm()
 
     return render(request, 'gira/login.html', {'form': form})
+
 
 def _get_user(request):
     uid = request.session.get('userprofile_id')
