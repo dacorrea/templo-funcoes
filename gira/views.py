@@ -58,3 +58,11 @@ def lista_funcoes(request):
         'user': user, 'gira': gira,
         'cambones': cambones, 'organizacao': organizacao, 'limpeza': limpeza
     })
+
+from django.shortcuts import redirect
+
+def logout_view(request):
+    """Finaliza a sessão do usuário e redireciona para o login."""
+    request.session.flush()
+    return redirect('gira:login')
+
