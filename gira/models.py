@@ -2,20 +2,22 @@ from django.db import models
 from django.utils import timezone
 
 class User(models.Model):
-    nome = models.CharField(max_length=100)
-    telefone = models.CharField(max_length=15, unique=True)
-    tipo_usuario = models.CharField(max_length=20, default='comum')
-    criado_em = models.DateTimeField(default=timezone.now)
-    codigo_verificacao = models.CharField(max_length=10, blank=True, null=True)
-    verificado = models.BooleanField(default=True)
-    role = models.CharField(max_length=20, default='user')
-    ativo = models.BooleanField(default=True)
+    password = models.CharField(max_length=128, null=True, blank=True)
+    last_login = models.DateTimeField(null=True, blank=True)
+    is_superuser = models.BooleanField(default=False)
+    username = models.CharField(max_length=150, unique=True)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    date_joined = models.DateTimeField(default=timezone.now)
+    celular = models.CharField(max_length=15, unique=True)
+    nome = models.CharField(max_length=150)
+    email = models.EmailField(null=True, blank=True)
 
     class Meta:
-        db_table = 'gira_user'  # 👈 força o uso da tabela existente
+        db_table = 'gira_user'  # usa a tabela existente
 
     def __str__(self):
-        return f"{self.nome} ({self.telefone})"
+        return f"{self.nome} ({self.celular})"
 
 
 class Medium(models.Model):
