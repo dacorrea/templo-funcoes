@@ -1,8 +1,6 @@
 from django.contrib import admin
-from .models import UserProfile, Medium, CambonePool, Gira, Funcao, Historico
-from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, UserProfile
+from .models import User, Medium, CambonePool, Gira, Funcao, Historico
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
@@ -21,8 +19,6 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
-
-admin.site.register(UserProfile)
 admin.site.register(Medium)
 admin.site.register(CambonePool)
 admin.site.register(Gira)
