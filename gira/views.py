@@ -1,6 +1,17 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Gira, Funcao
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+
+
+def check_user_model(request):
+    User = get_user_model()
+    return JsonResponse({
+        "auth_user_model": str(User),
+        "db_table": User._meta.db_table,
+        "fields": [f.name for f in User._meta.fields],
+    })
 
 
 def login_view(request):
