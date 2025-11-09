@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-class Users(models.Model):
+class User(models.Model):
     nome = models.CharField(max_length=100)
     telefone = models.CharField(max_length=15, unique=True)
     tipo_usuario = models.CharField(max_length=20, default='comum')
@@ -10,6 +10,9 @@ class Users(models.Model):
     verificado = models.BooleanField(default=True)
     role = models.CharField(max_length=20, default='user')
     ativo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'gira_user'  # 👈 força o uso da tabela existente
 
     def __str__(self):
         return f"{self.nome} ({self.telefone})"
@@ -36,7 +39,7 @@ class Gira(models.Model):
     titulo = models.CharField(max_length=200)
     data_hora = models.DateTimeField()
     linha = models.CharField(max_length=150)
-    criado_por = models.ForeignKey(Users, on_delete=models.SET_NULL, null=True, blank=True)
+    criado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, default='ativa')
 
     def __str__(self):
@@ -50,7 +53,7 @@ class Funcao(models.Model):
     tipo = models.CharField(max_length=20, choices=TIPO)
     posicao = models.CharField(max_length=50, blank=True)
     medium_de_linha = models.ForeignKey(Medium, on_delete=models.SET_NULL, null=True, blank=True)
-    pessoa = models.ForeignKey(Users, on_delete=models.SET_NULL, null=True, blank=True)
+    pessoa = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, default='Vaga')
     descricao = models.TextField(blank=True)
 
@@ -61,7 +64,7 @@ class Funcao(models.Model):
 class Historico(models.Model):
     gira = models.ForeignKey(Gira, on_delete=models.CASCADE)
     funcao = models.ForeignKey(Funcao, on_delete=models.SET_NULL, null=True)
-    usuario = models.ForeignKey(Users, on_delete=models.SET_NULL, null=True, blank=True)
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     acao = models.CharField(max_length=50)
     data = models.DateTimeField(auto_now_add=True)
     info = models.JSONField(null=True, blank=True)
