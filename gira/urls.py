@@ -1,16 +1,21 @@
 from django.urls import path
 from . import views
-from .views import login_view, test_user_list 
 
 app_name = 'gira'
 
 urlpatterns = [
     path('', views.login_view, name='login'),
     path('funcoes/', views.lista_funcoes, name='lista_funcoes'),
-    path('funcao/<int:pk>/', views.funcao_detail, name='funcao_detail'),
-    path('assumir/<int:pk>/', views.assumir_funcao, name='assumir_funcao'),
-    path('liberar/<int:pk>/', views.liberar_funcao, name='liberar_funcao'),
-    path('criar-gira/', views.criar_gira, name='criar_gira'),
-    path('logout/', views.logout_view, name='logout'),
-    path('test-users/', test_user_list),
 ]
+
+
+#urlpatterns = [
+#   path('', views.login_view, name='login'),
+#    path('funcoes/', views.lista_funcoes, name='lista_funcoes'),
+#    path('funcao/<int:pk>/', views.funcao_detail, name='funcao_detail'),
+#    path('assumir/<int:pk>/', views.assumir_funcao, name='assumir_funcao'),
+#    path('liberar/<int:pk>/', views.liberar_funcao, name='liberar_funcao'),
+#    path('criar-gira/', views.criar_gira, name='criar_gira'),
+#    path('logout/', views.logout_view, name='logout'),
+#    path('test-users/', test_user_list),
+#]
