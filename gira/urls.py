@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-from .views import test_user_list  # se essa view realmente existe
 
 app_name = 'gira'
 
