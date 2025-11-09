@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import User, Gira, Funcao
+from .models import Gira, Funcao
 
 
 def login_view(request):
-    """Login apenas por número de celular."""
+    from django.contrib.auth import get_user_model  # <-- mover para dentro
+    User = get_user_model()
     if request.method == 'POST':
         celular = ''.join(ch for ch in request.POST.get('celular', '') if ch.isdigit())
 
