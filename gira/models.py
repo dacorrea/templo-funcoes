@@ -13,6 +13,10 @@ class User(models.Model):
     nome = models.CharField(max_length=150)
     email = models.EmailField(null=True, blank=True)
 
+     # ✅ Campos necessários para funcionar como modelo de usuário
+    USERNAME_FIELD = 'celular'
+    REQUIRED_FIELDS = ['']  # ou [] se preferir que só o celular seja obrigatório
+
     class Meta:
         db_table = 'gira_user'  # usa a tabela existente
 
