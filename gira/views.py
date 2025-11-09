@@ -22,7 +22,7 @@ def login_view(request):
 
         try:
             # Busca o usuário diretamente na tabela gira_user
-            user = User.objects.get(telefone=celular, ativo=True)
+            user = User.objects.get(telefone=celular, is_active=True)
         except User.DoesNotExist:
             messages.error(request, 'Celular não encontrado ou usuário inativo.')
             return render(request, 'gira/login.html')
