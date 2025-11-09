@@ -1,61 +1,94 @@
 {% extends 'gira/base.html' %}
+
 {% block content %}
-<div class="container">
-  <div class="mb-3">
+<div class="container my-4">
+  <div class="mb-4">
     {% if gira %}
-      <h2>{{ gira.titulo }} <small class="text-muted">- {{ gira.data_hora }}</small></h2>
-      <p>Linha: {{ gira.linha }}</p>
+      <h2>
+        {{ gira.titulo }}
+        <small class="text-muted">– {{ gira.data_hora|date:"d/m/Y H:i" }}</small>
+      </h2>
+      {% if gira.linha %}
+        <p class="text-secondary">Linha: {{ gira.linha }}</p>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-warning">Nenhuma gira encontrada.</div>
     {% endif %}
   </div>
+
   <div class="row">
+    <!-- CAMBONES -->
     <div class="col-md-4">
-      <h4>Cambones</h4>
+      <h4 class="mb-3">Cambones</h4>
       {% for f in cambones %}
-        <div class="card mb-2">
+        <div class="card mb-3 shadow-sm">
           <div class="card-body">
-            <div class="fw-bold">{{ f.medium_de_linha.nome if f.medium_de_linha else '' }}</div>
-            <div class="text-muted small">{{ f.posicao }}</div>
+            <div class="fw-bold">
+              {{ f.medium_de_linha.nome|default:"—" }}
+            </div>
+            <div class="text-muted small">
+              {{ f.posicao|default:"(sem posição)" }}
+            </div>
+
             {% if f.status == 'Vaga' %}
-              <div class="mt-2"><a href="{% url 'gira:funcao_detail' f.pk %}" class="btn btn-sm btn-success">Assumir</a></div>
+              <div class="mt-2">
+                <a href="{% url 'gira:funcao_detail' f.pk %}" class="btn btn-sm btn-success">Assumir</a>
+              </div>
             {% else %}
-              <div class="mt-2">Assumida por: {{ f.pessoa.nome }}</div>
-              {% if user.role == 'admin' %}<a href="{% url 'gira:funcao_detail' f.pk %}" class="btn btn-sm btn-warning mt-2">Editar</a>{% endif %}
+              <div class="mt-2">
+                Assumida por: {{ f.pessoa.nome|default:"(sem nome)" }}
+              </div>
+              {% if user.is_authenticated and user.role == 'admin' %}
+                <a href="{% url 'gira:funcao_detail' f.pk %}" class="btn btn-sm btn-warning mt-2">Editar</a>
+              {% endif %}
             {% endif %}
           </div>
         </div>
-      {% empty %}<p>Sem cambones.</p>{% endfor %}
+      {% empty %}
+        <p class="text-muted fst-italic">Nenhum cambone cadastrado.</p>
+      {% endfor %}
     </div>
+
+    <!-- ORGANIZAÇÃO -->
     <div class="col-md-4">
-      <h4>Organização</h4>
+      <h4 class="mb-3">Organização</h4>
       {% for f in organizacao %}
-        <div class="card mb-2">
+        <div class="card mb-3 shadow-sm">
           <div class="card-body">
-            <div class="fw-bold">{{ f.posicao }}</div>
-            <div class="text-muted small">{{ f.descricao }}</div>
+            <div class="fw-bold">{{ f.posicao|default:"—" }}</div>
+            <div class="text-muted small">{{ f.descricao|default:"(sem descrição)" }}</div>
+
             {% if f.status == 'Vaga' %}
-              <a href="{% url 'gira:assumir_funcao' f.pk %}" class="btn btn-sm btn-success">Assumir</a>
+              <a href="{% url 'gira:assumir_funcao' f.pk %}" class="btn btn-sm btn-success mt-2">Assumir</a>
             {% else %}
-              <div class="mt-2">Assumida por: {{ f.pessoa.nome }}</div>
+              <div class="mt-2">Assumida por: {{ f.pessoa.nome|default:"(sem nome)" }}</div>
             {% endif %}
           </div>
         </div>
-      {% empty %}<p>Sem organização.</p>{% endfor %}
+      {% empty %}
+        <p class="text-muted fst-italic">Nenhuma função de organização cadastrada.</p>
+      {% endfor %}
     </div>
+
+    <!-- LIMPEZA -->
     <div class="col-md-4">
-      <h4>Limpeza</h4>
+      <h4 class="mb-3">Limpeza</h4>
       {% for f in limpeza %}
-        <div class="card mb-2">
+        <div class="card mb-3 shadow-sm">
           <div class="card-body">
-            <div class="fw-bold">{{ f.posicao }}</div>
-            <div class="text-muted small">{{ f.descricao }}</div>
+            <div class="fw-bold">{{ f.posicao|default:"—" }}</div>
+            <div class="text-muted small">{{ f.descricao|default:"(sem descrição)" }}</div>
+
             {% if f.status == 'Vaga' %}
-              <a href="{% url 'gira:assumir_funcao' f.pk %}" class="btn btn-sm btn-success">Assumir</a>
+              <a href="{% url 'gira:assumir_funcao' f.pk %}" class="btn btn-sm btn-success mt-2">Assumir</a>
             {% else %}
-              <div class="mt-2">Assumida por: {{ f.pessoa.nome }}</div>
+              <div class="mt-2">Assumida por: {{ f.pessoa.nome|default:"(sem nome)" }}</div>
             {% endif %}
           </div>
         </div>
-      {% empty %}<p>Sem limpeza.</p>{% endfor %}
+      {% empty %}
+        <p class="text-muted fst-italic">Nenhuma função de limpeza cadastrada.</p>
+      {% endfor %}
     </div>
   </div>
 </div>
