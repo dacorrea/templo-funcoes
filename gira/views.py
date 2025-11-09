@@ -30,7 +30,7 @@ def login_view(request):
         # Guarda dados mínimos na sessão
         request.session['user_id'] = user.id
         request.session['user_nome'] = user.nome
-        request.session['user_telefone'] = user.telefone
+        request.session['user_telefone'] = user.celular
 
         # Redireciona para a lista de funções
         return redirect('gira:lista_funcoes')
