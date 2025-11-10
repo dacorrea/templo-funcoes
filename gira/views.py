@@ -52,7 +52,7 @@ def _get_user(request):
 
 
 def lista_funcoes(request):
-    """Lista de funções da última gira, organizada por tipo (igual ao Glide)."""
+    """Lista de funções da última gira, agrupadas por tipo (compatível com o layout atual)."""
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
@@ -62,9 +62,10 @@ def lista_funcoes(request):
         messages.info(request, 'Nenhuma gira cadastrada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
-    funcoes = gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('tipo', 'posicao')
+    # Busca todas as funções da gira, incluindo medium e pessoa
+    funcoes = gira.funcoes.select_related('medium_de_linha', 'pessoa').all()
 
-    # Normaliza tipos de função (aceita variações como 'Cambone' ou 'Cambones')
+    # ✅ Normaliza os nomes dos tipos (tratando variações Cambone/Cambones, Organização/Organizacao, etc.)
     cambones = [f for f in funcoes if f.tipo.lower().startswith('cambone')]
     organizacao = [f for f in funcoes if f.tipo.lower().startswith('organ')]
     limpeza = [f for f in funcoes if f.tipo.lower().startswith('limp')]
@@ -77,6 +78,7 @@ def lista_funcoes(request):
         'limpeza': limpeza,
     }
     return render(request, 'gira/lista_funcoes.html', context)
+
 
 
 
