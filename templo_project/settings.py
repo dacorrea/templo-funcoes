@@ -17,6 +17,10 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 AUTH_USER_MODEL = 'gira.User'
 
+# settings.py
+SCHEMA_VIEW_TOKEN = 'TroquePorUmTokenMuitoForte123!'  # substitua por algo forte
+
+
 AUTHENTICATION_BACKENDS = [
     'gira.backends.CelularBackend',  # nosso backend customizado
     'django.contrib.auth.backends.ModelBackend',  # mantém o padrão
