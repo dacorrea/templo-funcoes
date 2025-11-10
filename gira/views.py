@@ -52,7 +52,7 @@ def _get_user(request):
 
 
 def lista_funcoes(request):
-    """Lista de funções da última gira."""
+    """Lista de funções da última gira, organizada por tipo (igual ao Glide)."""
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
@@ -62,17 +62,24 @@ def lista_funcoes(request):
         messages.info(request, 'Nenhuma gira cadastrada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
-    funcoes = gira.funcoes.all().order_by('tipo', 'posicao')
-    cambones = funcoes.filter(tipo='Cambones')
-    organizacao = funcoes.filter(tipo='Organizacao')
-    limpeza = funcoes.filter(tipo='Limpeza')
+    funcoes = gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('tipo', 'posicao')
 
-    return render(request, 'gira/lista_funcoes.html', {
-        'user': user, 'gira': gira,
-        'cambones': cambones, 'organizacao': organizacao, 'limpeza': limpeza
-    })
+    # Normaliza tipos de função (aceita variações como 'Cambone' ou 'Cambones')
+    cambones = [f for f in funcoes if f.tipo.lower().startswith('cambone')]
+    organizacao = [f for f in funcoes if f.tipo.lower().startswith('organ')]
+    limpeza = [f for f in funcoes if f.tipo.lower().startswith('limp')]
 
-from django.shortcuts import redirect
+    context = {
+        'user': user,
+        'gira': gira,
+        'cambones': cambones,
+        'organizacao': organizacao,
+        'limpeza': limpeza,
+    }
+    return render(request, 'gira/lista_funcoes.html', context)
+
+
+
 
 def logout_view(request):
     """Finaliza a sessão do usuário e redireciona para o login."""
