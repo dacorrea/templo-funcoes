@@ -25,9 +25,20 @@ class User(models.Model):
 
 
 class Medium(models.Model):
+    class Meta:
+        db_table = 'gira_medium'
+
     nome = models.CharField(max_length=150)
     habilitado = models.BooleanField(default=True)
-    is_linha = models.BooleanField(default=False)  # ✅ define se é médium de linha
+
+    def __str__(self):
+        return self.nome
+
+
+class CambonePool(models.Model):
+    nome = models.CharField(max_length=150)
+    ordem = models.IntegerField(default=0)
+    ativo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nome
@@ -41,26 +52,22 @@ class Gira(models.Model):
     status = models.CharField(max_length=20, default='ativa')
 
     def __str__(self):
-        return f"{self.titulo} - {self.linha} ({self.data_hora.strftime('%d/%m/%Y')})"
+        return f"{self.titulo} - {self.linha} - {self.data_hora}"
 
 
 class Funcao(models.Model):
-    TIPO = (
-        ('Cambones', 'Cambones'),
-        ('Organizacao', 'Organização'),
-        ('Limpeza', 'Limpeza'),
-    )
+    TIPO = (('Cambones', 'Cambones'), ('Organizacao', 'Organizacao'), ('Limpeza', 'Limpeza'))
     gira = models.ForeignKey(Gira, on_delete=models.CASCADE, related_name='funcoes')
     chave = models.CharField(max_length=50)
     tipo = models.CharField(max_length=20, choices=TIPO)
     posicao = models.CharField(max_length=50, blank=True)
-    medium_de_linha = models.ForeignKey(Medium, on_delete=models.SET_NULL, null=True, blank=True, related_name='funcoes_linha')
-    pessoa = models.ForeignKey(Medium, on_delete=models.SET_NULL, null=True, blank=True, related_name='funcoes_pessoa')
+    medium_de_linha = models.ForeignKey(Medium, on_delete=models.SET_NULL, null=True, blank=True)
+    pessoa = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, default='Vaga')
     descricao = models.TextField(blank=True)
 
     def __str__(self):
-        return f"{self.tipo} - {self.posicao} ({self.status})"
+        return f"{self.tipo} - {self.posicao} - {self.status}"
 
 
 class Historico(models.Model):
