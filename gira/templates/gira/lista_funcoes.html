@@ -59,7 +59,7 @@
             <div class="text-muted small">{{ f.descricao|default:"(sem descrição)" }}</div>
 
             {% if f.status == 'Vaga' %}
-              <a href="{% url 'gira:assumir_funcao' f.pk %}" class="btn btn-sm btn-success mt-2">Assumir</a>
+              <button class="btn btn-sm btn-success mt-2" disabled>Assumir</button>
             {% else %}
               <div class="mt-2">Assumida por: {{ f.pessoa.nome|default:"(sem nome)" }}</div>
             {% endif %}
