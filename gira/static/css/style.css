@@ -1,1 +1,99 @@
-/* styles */
+/* Paleta de cores */
+:root {
+    --azul-bebe: #a4d2e8;
+    --branco: #ffffff;
+    --cinza-claro: #f5f5f5;
+    --cinza-texto: #555555;
+}
+
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Corpo da página */
+body {
+    background-color: var(--branco);
+    color: var(--cinza-texto);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cabeçalho */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--azul-bebe);
+    padding: 0.8rem 2rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.logo {
+    height: 48px;
+    width: auto;
+    border-radius: 50%;
+}
+
+.titulo {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--branco);
+}
+
+/* Menu */
+.menu a {
+    text-decoration: none;
+    color: var(--branco);
+    font-weight: 500;
+    margin-left: 1rem;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.menu a:hover {
+    opacity: 0.8;
+}
+
+/* Conteúdo principal */
+.conteudo {
+    flex: 1;
+    padding: 2rem;
+}
+
+/* Rodapé */
+.rodape {
+    text-align: center;
+    padding: 1rem 0;
+    background-color: var(--azul-bebe);
+    color: var(--branco);
+    font-size: 0.9rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .menu {
+        display: none;
+    }
+
+    .logo {
+        height: 36px;
+    }
+
+    .titulo {
+        display: none; /* deixa só o logo no mobile */
+    }
+
+    .navbar {
+        justify-content: center;
+    }
+}
