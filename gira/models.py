@@ -15,7 +15,7 @@ class User(models.Model):
 
      # ✅ Campos necessários para funcionar como modelo de usuário
     USERNAME_FIELD = 'celular'
-    REQUIRED_FIELDS = ['']  # ou [] se preferir que só o celular seja obrigatório
+    REQUIRED_FIELDS = []  # ou [] se preferir que só o celular seja obrigatório
 
     class Meta:
         db_table = 'gira_user'  # usa a tabela existente
@@ -25,6 +25,9 @@ class User(models.Model):
 
 
 class Medium(models.Model):
+    class Meta:
+        db_table = 'gira_medium'
+
     nome = models.CharField(max_length=150)
     habilitado = models.BooleanField(default=True)
 
