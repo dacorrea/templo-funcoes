@@ -95,3 +95,36 @@ def lista_funcoes(request):
         'limpeza': prepare_list(limpeza),
     }
     return render(request, 'gira/lista_funcoes.html', context)
+
+def assumir_funcao(request, pk):
+    user = _get_user(request)
+    if not user:
+        return redirect('gira:login')
+
+    funcao = get_object_or_404(Funcao, pk=pk)
+
+    # regra: usuário comum não pode assumir cambones
+    if 'cambone' in (funcao.tipo or '').lower() and not user.is_staff:
+        messages.error(request, 'Você não pode assumir funções de cambone.')
+        return redirect('gira:lista_funcoes')
+
+    if funcao.status and funcao.status.lower() == 'preenchida':
+        messages.warning(request, 'Esta função já está preenchida.')
+        return redirect('gira:lista_funcoes')
+
+    # atualiza
+    funcao.pessoa = user
+    funcao.status = 'Preenchida'
+    funcao.save()
+
+    Historico.objects.create(
+        gira=funcao.gira,
+        funcao=funcao,
+        usuario=user,
+        acao='Assumir',
+        data=timezone.now(),
+        info={'from_view': 'assumir_funcao'}
+    )
+
+    messages.success(request, 'Função assumida com sucesso.')
+    return redirect('gira:lista_funcoes')
