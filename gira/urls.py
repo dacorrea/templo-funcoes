@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from . import views_chema
+
 
 app_name = 'gira'
 
@@ -13,6 +13,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
 #    path('test-users/', test_user_list),
     path('check-user/', views.check_user_model),
-    path('schema-json/', views_schema.schema_view, name='schema_json'),
+
 
 ]
