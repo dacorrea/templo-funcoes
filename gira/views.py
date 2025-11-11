@@ -4,6 +4,7 @@ from .models import Gira, Funcao, Medium, Historico
 from django.contrib.auth import get_user_model
 from .models import User
 from django.utils import timezone
+import unicodedata
 
 def check_user_model(request):
     User = get_user_model()
@@ -69,6 +70,16 @@ def _display_name_for_person(funcao):
     # 3) fallback
     return '-'
 
+
+
+def _normalize(s: str) -> str:
+    """Remove acentos e normaliza para comparação."""
+    if not s:
+        return ''
+    s = s.lower()
+    s = unicodedata.normalize('NFKD', s)
+    return ''.join(ch for ch in s if not unicodedata.combining(ch))
+
 def lista_funcoes(request):
     """Lista de funções da última gira, agrupadas por blocos (Cambones, Organização, Limpeza)."""
     user = _get_user(request)
@@ -80,39 +91,89 @@ def lista_funcoes(request):
         messages.info(request, 'Nenhuma gira cadastrada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
-    funcoes = list(gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('posicao'))
+    # carrega funções; evita N+1
+    funcoes_qs = gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('posicao')
+    funcoes = list(funcoes_qs)
 
-    cambones, organizacao, limpeza = [], [], []
+    cambones = []
+    organizacao = []
+    limpeza = []
 
     for f in funcoes:
         tipo = (f.tipo or '').lower()
         chave = (f.chave or '').lower()
         descricao = (f.descricao or '').lower()
 
+        # heurística de agrupamento (tolerante)
         if 'cambone' in tipo or 'cambone' in chave or 'cambone' in descricao:
             cambones.append(f)
-        elif any(k in tipo or k in chave or k in descricao for k in ['organ', 'senha', 'portão', 'lojinha', 'chamar']):
+        elif any(k in tipo or k in chave or k in descricao for k in ['organ', 'senha', 'portão', 'portão', 'lojinh', 'chamar', 'organizar']):
             organizacao.append(f)
         elif 'limp' in tipo or 'limp' in chave or 'limp' in descricao:
             limpeza.append(f)
         else:
             organizacao.append(f)
 
-    # 🔥 Define o tema dinamicamente conforme a linha da gira
-    linha = (gira.linha or '').lower()
-    if 'exu' in linha or 'exu e pombagira' in linha or 'pombagiras' in linha or 'exus e pombagiras' in linha:
+    # --- Ordenação dos cambones: Mãe Bruna primeiro, depois alfabética pelo medium_de_linha.nome ---
+    def _cambone_key(item):
+        nome = item.medium_de_linha.nome if item.medium_de_linha else ''
+        n = _normalize(nome)
+        # garante que "mãe bruna" / "mae bruna" fique no topo
+        if 'mae bruna' in n or 'mae' in n and 'bruna' in n or 'mãe bruna' in n:
+            return ('', '')  # prioridade máxima
+        return (n, nome or '')
+
+    cambones.sort(key=_cambone_key)
+
+    # --- Organização: forçamos ordem fixa para algumas funções comuns ---
+    ordem_fix = ['portao', 'distribuir senha', 'lojinha', 'chamar senha']  # normalizados
+    buckets = {k: [] for k in ordem_fix}
+    others = []
+
+    for f in organizacao:
+        descr = _normalize(f.descricao or f.tipo or '')
+        placed = False
+        for key in ordem_fix:
+            if key in descr:
+                buckets[key].append(f)
+                placed = True
+                break
+        if not placed:
+            others.append(f)
+
+    organizacao_ordered = []
+    for key in ordem_fix:
+        organizacao_ordered.extend(buckets[key])
+    organizacao_ordered.extend(others)
+
+    # --- Limpeza: padroniza display da descrição para "Limpeza" quando pertinente ---
+    for f in limpeza:
+        descr = (f.descricao or f.tipo or '')
+        if 'limp' in (descr or '').lower():
+            # adiciona atributo temporário para usar no template: f.display_descricao
+            setattr(f, 'display_descricao', 'Limpeza')
+        else:
+            setattr(f, 'display_descricao', descr or f.tipo or 'Limpeza')
+
+    # --- Tema ---
+    linha = (gira.linha or '')
+    nlinha = _normalize(linha)
+    if 'exu' in nlinha or 'pombag' in nlinha:
         tema = 'exu'
     else:
         tema = 'padrao'
 
-    return render(request, 'gira/lista_funcoes.html', {
+    contexto = {
         'user': user,
         'gira': gira,
         'cambones': cambones,
-        'organizacao': organizacao,
+        'organizacao': organizacao_ordered,
         'limpeza': limpeza,
         'tema': tema,
-    })
+    }
+
+    return render(request, 'gira/lista_funcoes.html', contexto)
+
 
 
 
