@@ -41,6 +41,7 @@ class User(models.Model):
 class Medium(models.Model):
     nome = models.CharField(max_length=150)
     habilitado = models.BooleanField(default=True)
+    user = models.OneToOneField('User', on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         db_table = 'gira_medium'
