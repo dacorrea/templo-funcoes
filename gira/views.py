@@ -70,7 +70,7 @@ def _display_name_for_person(funcao):
     return '-'
 
 def lista_funcoes(request):
-    """Lista de funções da última gira, agrupadas e ordenadas."""
+    """Lista de funções da última gira, agrupadas por blocos (Cambones, Organização, Limpeza)."""
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
@@ -80,53 +80,40 @@ def lista_funcoes(request):
         messages.info(request, 'Nenhuma gira cadastrada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
-    # Carrega funções com joins para evitar N+1
-    funcoes = list(gira.funcoes.select_related('medium_de_linha', 'pessoa').all())
+    funcoes = list(gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('posicao'))
 
-    # Define ordem específica para os grupos
-    ordem_organizacao = ["Portão", "Distribuir senha", "Lojinha", "Chamar senha"]
-
-    # Agrupamentos
-    cambones = []
-    organizacao = []
-    limpeza = []
+    cambones, organizacao, limpeza = [], [], []
 
     for f in funcoes:
         tipo = (f.tipo or '').lower()
         chave = (f.chave or '').lower()
         descricao = (f.descricao or '').lower()
 
-        # Identifica Cambones
         if 'cambone' in tipo or 'cambone' in chave or 'cambone' in descricao:
             cambones.append(f)
-        # Organização
-        elif any(pal.lower() in descricao for pal in ordem_organizacao):
+        elif any(k in tipo or k in chave or k in descricao for k in ['organ', 'senha', 'portão', 'lojinha', 'chamar']):
             organizacao.append(f)
-        # Limpeza
         elif 'limp' in tipo or 'limp' in chave or 'limp' in descricao:
             limpeza.append(f)
         else:
             organizacao.append(f)
 
-    # Ordena Cambones por nome do médium (alfabético, "Mãe Bruna" primeiro)
-    cambones.sort(key=lambda x: ('' if (x.medium_de_linha and x.medium_de_linha.nome.lower() == 'mãe bruna') else x.medium_de_linha.nome if x.medium_de_linha else 'zzzz'))
+    # 🔥 Define o tema dinamicamente conforme a linha da gira
+    linha = (gira.linha or '').lower()
+    if 'exu' in linha or 'exu e pombagira' in linha or 'pombagiras' in linha or 'exus e pombagiras' in linha:
+        tema = 'exu'
+    else:
+        tema = 'padrao'
 
-    # Ordena Organização conforme ordem pré-definida
-    organizacao.sort(key=lambda x: ordem_organizacao.index(x.descricao) if x.descricao in ordem_organizacao else 99)
-
-    # Ordena Limpeza por nome (ou posicao se houver)
-    limpeza.sort(key=lambda x: x.posicao or '')
-
-    context = {
+    return render(request, 'gira/lista_funcoes.html', {
         'user': user,
         'gira': gira,
         'cambones': cambones,
         'organizacao': organizacao,
         'limpeza': limpeza,
-        'ordem_organizacao': ordem_organizacao,  # 🔹 envia lista pro template
-    }
+        'tema': tema,
+    })
 
-    return render(request, 'gira/lista_funcoes.html', context)
 
 
 
