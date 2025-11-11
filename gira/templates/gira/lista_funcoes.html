@@ -31,7 +31,8 @@
       <div class="row g-3">
         {% for f in cambones %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm bg-light-subtle h-100">
+            <!-- 🔧 bg-light-subtle -> bg-light para compatibilidade -->
+            <div class="card border-0 shadow-sm bg-light h-100">
               <div class="card-body p-3 text-start">
                 <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
                   {{ f.medium_de_linha.nome|default:"—" }}
@@ -59,9 +60,10 @@
       <div class="row g-3">
         {% for f in organizacao %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm bg-light-subtle h-100 position-relative">
+            <div class="card border-0 shadow-sm bg-light h-100 position-relative">
               {% if f.status|lower == 'vaga' %}
-                <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
+                <span class="badge bg-danger position-absolute" 
+                      style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
               {% endif %}
               <div class="card-body p-3 text-start">
                 <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
@@ -90,9 +92,10 @@
       <div class="row g-3">
         {% for f in limpeza %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm bg-light-subtle h-100 position-relative">
+            <div class="card border-0 shadow-sm bg-light h-100 position-relative">
               {% if f.status|lower == 'vaga' %}
-                <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
+                <span class="badge bg-danger position-absolute" 
+                      style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
               {% endif %}
               <div class="card-body p-3 text-start">
                 <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
@@ -116,4 +119,18 @@
   <!-- Rodapé / Mensagem final -->
   <p class="text-white-50 mt-4" style="font-size: 0.9rem; text-align: justify;">
     Médiuns sem função definida na gira devem permanecer atentos, colaborar com os demais 
-    e
+    e apoiar a assistência quando necessário.
+  </p>
+
+</div>
+
+<style>
+.text-white-50 { color: rgba(255,255,255,0.7); }
+.card .badge { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
+@media (max-width: 576px) {
+  .card .badge { top: 8px; right: 8px; }
+}
+</style>
+
+<!-- ✅ Fechamento que estava faltando -->
+{% endblock %}
