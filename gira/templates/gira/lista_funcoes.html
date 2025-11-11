@@ -54,7 +54,7 @@
   <section class="mb-5">
     <h4 style="color: #ccc; font-size: 1.2rem; font-weight: 600;">Organização</h4>
     {% if organizacao %}
-      {% for nome in "Portão,Distribuir senha,Lojinha,Chamar senha".split(',') %}
+     {% for nome in ordem_organizacao %}
         <div class="mb-3">
           <h6 style="color: #aaa; font-weight: 600;">{{ nome }}</h6>
           <div class="row g-3">
