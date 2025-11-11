@@ -216,58 +216,110 @@ const csrftoken = getCookie('csrftoken');
 
 document.addEventListener('DOMContentLoaded', function() {
   const toast = document.getElementById('toast-funcao');
-
   function mostrarMensagem(msg, tipo='info') {
     toast.textContent = msg;
     toast.style.backgroundColor = tipo === 'success' ? '#198754' :
                                   tipo === 'warning' ? '#ffc107' :
                                   tipo === 'danger' ? '#dc3545' : '#333';
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
+    setTimeout(() => toast.classList.remove('show'), 2200);
   }
 
-  // ✅ Assumir função — sem reload total
-  document.querySelectorAll('.btn-assumir').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const funcao_id = btn.dataset.funcao;
-      const card = document.getElementById(`card-${funcao_id}`);
-      const resp = await fetch("{% url 'gira:assumir_funcao' %}", {
-        method: 'POST',
-        headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({funcao_id})
-      });
-      const d = await resp.json();
-      mostrarMensagem(d.mensagem, d.status === 'ok' ? 'success' : 'danger');
-      if (d.status === 'ok') {
-        // Atualiza visual localmente (sem reload)
-        card.querySelector('.btn-assumir').remove();
-        card.querySelector('.text-muted').innerHTML = `<span>${d.mensagem.split('por ')[1] || 'Você'}</span>
-          <button class="btn btn-link text-danger btn-desistir" data-funcao="${funcao_id}" title="Desistir" style="font-size:0.8rem; padding:0; margin-left:5px;">
-            <i class="bi bi-x-circle"></i>
-          </button>`;
-      }
-    });
-  });
+  // helper: renderiza o estado ASSUMIDA (sem reload)
+  function marcarAssumidaLocal(cardEl, nome, funcao_id) {
+    const meta = cardEl.querySelector('.text-muted');
+    if (!meta) return;
+    meta.innerHTML = `<span>${nome}</span>
+      <button class="btn btn-link text-danger btn-desistir" data-funcao="${funcao_id}" title="Desistir" style="font-size:0.8rem; padding:0; margin-left:5px;">
+        <i class="bi bi-x-circle"></i>
+      </button>`;
+  }
 
-  // ✅ Desistir função — sem reload total
-  document.addEventListener('click', async e => {
-    if (!e.target.closest('.btn-desistir')) return;
-    const btn = e.target.closest('.btn-desistir');
+  // helper: renderiza o estado VAGA (sem reload)
+  function marcarVagaLocal(cardEl, funcao_id) {
+    const meta = cardEl.querySelector('.text-muted');
+    if (!meta) return;
+    meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcao_id}" style="font-size: 0.8rem;">Assumir</button>`;
+  }
+
+  // ASSUMIR (optimistic)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-assumir');
+    if (!btn) return;
+
     const funcao_id = btn.dataset.funcao;
     const card = document.getElementById(`card-${funcao_id}`);
-    const resp = await fetch("{% url 'gira:desistir_funcao' %}", {
+    if (!card) return;
+
+    // nome a usar no update otimista: pega do template (nome do medium_logado)
+    const nomeLocal = "{{ medium_logado.nome|default:user.nome|escapejs }}";
+
+    // UI imediata
+    marcarAssumidaLocal(card, nomeLocal, funcao_id);
+    mostrarMensagem(`Assumindo função...`, 'info');
+
+    // faz o POST
+    fetch("{% url 'gira:assumir_funcao' %}", {
       method: 'POST',
       headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams({funcao_id})
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'ok') {
+        mostrarMensagem(d.mensagem, 'success');
+        // nothing else: already updated
+      } else {
+        // reverte UI
+        marcarVagaLocal(card, funcao_id);
+        mostrarMensagem(d.mensagem || 'Erro ao assumir função', 'danger');
+      }
+    })
+    .catch(err => {
+      // reverte UI
+      marcarVagaLocal(card, funcao_id);
+      mostrarMensagem('Erro de rede ao assumir função', 'danger');
     });
-    const d = await resp.json();
-    mostrarMensagem(d.mensagem, d.status === 'ok' ? 'warning' : 'danger');
-    if (d.status === 'ok') {
-      // Atualiza visual localmente
-      card.querySelector('.text-muted').innerHTML = `
-        <button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcao_id}" style="font-size: 0.8rem;">Assumir</button>`;
-    }
   });
+
+  // DESISTIR (optimistic)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-desistir');
+    if (!btn) return;
+
+    const funcao_id = btn.dataset.funcao;
+    const card = document.getElementById(`card-${funcao_id}`);
+    if (!card) return;
+
+    // UI imediata: volta para vaga
+    marcarVagaLocal(card, funcao_id);
+    mostrarMensagem('Desistindo da função...', 'info');
+
+    fetch("{% url 'gira:desistir_funcao' %}", {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({funcao_id})
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'ok') {
+        mostrarMensagem(d.mensagem, 'warning');
+      } else {
+        // reverte para estado assumida (com mensagem)
+        // se d.mensagem contiver nome, tenta extrair, senão usa 'Você'
+        const nomeVolta = d.nome || "{{ medium_logado.nome|default:user.nome|escapejs }}";
+        marcarAssumidaLocal(card, nomeVolta, funcao_id);
+        mostrarMensagem(d.mensagem || 'Erro ao desistir', 'danger');
+      }
+    })
+    .catch(() => {
+      const nomeVolta = "{{ medium_logado.nome|default:user.nome|escapejs }}";
+      marcarAssumidaLocal(card, nomeVolta, funcao_id);
+      mostrarMensagem('Erro de rede ao desistir', 'danger');
+    });
+  });
+
 });
 </script>
+
 {% endblock %}
