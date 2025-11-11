@@ -89,7 +89,7 @@
                             data-funcao="{{ f.id }}"
                             style="font-size: 0.8rem;">Assumir</button>
                   {% else %}
-                    {% if f.pessoa and f.pessoa.user_id == sess_user_id %}
+                    {% if f.pessoa and f.pessoa.id == user.medium.id %}
                       <span>{{ f.pessoa.nome|default:"—" }}</span>
                       <button class="btn btn-link text-danger btn-desistir"
                               data-funcao="{{ f.id }}"
@@ -141,7 +141,7 @@
                             data-funcao="{{ f.id }}"
                             style="font-size: 0.8rem;">Assumir</button>
                   {% else %}
-                    {% if f.pessoa and f.pessoa.user_id == sess_user_id %}
+                    {% if f.pessoa and f.pessoa.id == user.medium.id %}
                       <span>{{ f.pessoa.nome|default:"—" }}</span>
                       <button class="btn btn-link text-danger btn-desistir"
                               data-funcao="{{ f.id }}"
@@ -229,13 +229,28 @@ document.addEventListener('DOMContentLoaded', function() {
     alerta.style.zIndex = 1055;
     alerta.textContent = msg;
     document.body.appendChild(alerta);
-    setTimeout(() => alerta.remove(), 2500);
+    setTimeout(() => alerta.remove(), 2000);
   }
 
-  // ✅ Assumir função
+  // Função auxiliar: bloqueia duplo clique e dá resposta imediata
+  function bloquearBotao(btn, textoTemp) {
+    btn.disabled = true;
+    const antigo = btn.textContent;
+    btn.textContent = textoTemp;
+    btn.style.opacity = "0.7";
+    return () => {
+      btn.disabled = false;
+      btn.textContent = antigo;
+      btn.style.opacity = "1";
+    };
+  }
+
+  // ✅ Assumir função (resposta instantânea + reload suave)
   document.querySelectorAll('.btn-assumir').forEach(btn => {
     btn.addEventListener('click', () => {
+      const liberar = bloquearBotao(btn, "Assumindo...");
       const funcao_id = btn.dataset.funcao;
+
       fetch("{% url 'gira:assumir_funcao' %}", {
         method: 'POST',
         headers: {
@@ -247,16 +262,25 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(r => r.json())
       .then(d => {
         mostrarMensagem(d.mensagem, d.status === 'ok' ? 'success' : 'danger');
-        if (d.status === 'ok') setTimeout(() => location.reload(), 700);
+        if (d.status === 'ok') {
+          btn.textContent = "Assumido ✓";
+          btn.classList.replace('btn-success', 'btn-secondary');
+          setTimeout(() => location.reload(), 800);
+        } else liberar();
       })
-      .catch(() => mostrarMensagem('Erro ao assumir função', 'danger'));
+      .catch(() => {
+        mostrarMensagem('Erro ao assumir função', 'danger');
+        liberar();
+      });
     });
   });
 
-  // ✅ Desistir função
+  // ✅ Desistir função (resposta instantânea também)
   document.querySelectorAll('.btn-desistir').forEach(btn => {
     btn.addEventListener('click', () => {
+      const liberar = bloquearBotao(btn, "Saindo...");
       const funcao_id = btn.dataset.funcao;
+
       fetch("{% url 'gira:desistir_funcao' %}", {
         method: 'POST',
         headers: {
@@ -268,11 +292,18 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(r => r.json())
       .then(d => {
         mostrarMensagem(d.mensagem, d.status === 'ok' ? 'warning' : 'danger');
-        if (d.status === 'ok') setTimeout(() => location.reload(), 700);
+        if (d.status === 'ok') {
+          btn.closest('.card-body').style.opacity = '0.6';
+          setTimeout(() => location.reload(), 700);
+        } else liberar();
       })
-      .catch(() => mostrarMensagem('Erro ao desistir da função', 'danger'));
+      .catch(() => {
+        mostrarMensagem('Erro ao desistir da função', 'danger');
+        liberar();
+      });
     });
   });
 });
 </script>
+
 {% endblock %}
