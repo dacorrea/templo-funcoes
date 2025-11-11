@@ -14,5 +14,8 @@ urlpatterns = [
 #    path('test-users/', test_user_list),
     path('check-user/', views.check_user_model),
  #   path('assumir/<int:pk>/', views.assumir_funcao, name='assumir_funcao'),
+    path('assumir-funcao/', views.assumir_funcao, name='assumir_funcao'),
+    path('desistir-funcao/', views.desistir_funcao, name='desistir_funcao'),
+
 
 ]
