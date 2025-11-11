@@ -87,7 +87,8 @@ class Funcao(models.Model):
     status = models.CharField(max_length=50, default='Vaga')
     descricao = models.TextField(blank=True)
     medium_de_linha = models.ForeignKey(Medium, on_delete=models.SET_NULL, null=True, blank=True)
-    pessoa = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    pessoa = models.ForeignKey('Medium', null=True, blank=True, on_delete=models.SET_NULL, related_name='funcoes_assumidas')
+
 
     class Meta:
         db_table = 'gira_funcao'
