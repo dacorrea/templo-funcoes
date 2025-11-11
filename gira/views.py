@@ -80,10 +80,14 @@ def lista_funcoes(request):
         messages.info(request, 'Nenhuma gira cadastrada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
-    # Carrega todas as funções com joins para evitar N+1
-    funcoes = list(gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('posicao'))
+        # Carrega todas as funções da gira (com os relacionamentos necessários)
+    funcoes = (
+        gira.funcoes
+        .select_related('medium_de_linha', 'pessoa')
+        .order_by('tipo', 'posicao')
+    )
 
-    # Agrupa por bloco com heurística tolerante (aceita variações no campo tipo)
+    # Agrupa as funções em listas por tipo
     cambones = []
     organizacao = []
     limpeza = []
@@ -93,18 +97,34 @@ def lista_funcoes(request):
         chave = (f.chave or '').lower()
         descricao = (f.descricao or '').lower()
 
-        # Detecta cambone por tipo ou por chave/descrição
         if 'cambone' in tipo or 'cambone' in chave or 'cambone' in descricao:
             cambones.append(f)
-        # Organização: palavras-chave típicas
-        elif any(k in tipo or k in chave or k in descricao for k in ['organ', 'senha', 'portão', 'lojinha', 'chamar', 'organizar']):
+        elif any(k in tipo or k in chave or k in descricao for k in ['organ', 'senha', 'portão', 'lojinha', 'chamar', 'assist', 'venda']):
             organizacao.append(f)
-        # Limpeza: por 'limp'
         elif 'limp' in tipo or 'limp' in chave or 'limp' in descricao:
             limpeza.append(f)
         else:
-            # fallback: coloca em organização para não sumir
             organizacao.append(f)
+
+    # Ordenação especial dos cambones (Mãe Bruna primeiro, depois alfabética)
+    def sort_cambones(item):
+        nome = item.medium_de_linha.nome if item.medium_de_linha else ''
+        if nome.strip().lower() == 'mãe bruna':
+            return ('', '')
+        return (nome.lower(), nome.lower())
+
+    cambones.sort(key=sort_cambones)
+
+    contexto = {
+        'user': user,
+        'gira': gira,
+        'cambones': cambones,
+        'organizacao': organizacao,
+        'limpeza': limpeza,
+    }
+
+    return render(request, 'gira/lista_funcoes.html', contexto)
+
 
     # Prepara objetos simples para o template (com nome exibível)
     def prepare_list(lst):
