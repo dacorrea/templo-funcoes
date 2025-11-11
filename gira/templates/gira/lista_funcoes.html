@@ -189,7 +189,7 @@
 }
 {% else %}
 .navbar {
-  background: linear-gradient(to right, #004080, #0072bb, #0dcaf0);
+  background: linear-gradient(to right, #035ab0, #0784d5, #4ae1ff);
   color: white !important;
 }
 {% endif %}
@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function() {
     btn.addEventListener("click", () => {
       const funcao = btn.dataset.funcao || "função";
       const nome = "{{ user.nome|default:'Usuário' }}"; // 🔥 nome do médium logado
-      toast.textContent = `Função assumida por @${nome}`;
+      toast.textContent = `Função assumida por ${nome}`;
       toast.classList.add("show");
       setTimeout(() => toast.classList.remove("show"), 3500);
     });
