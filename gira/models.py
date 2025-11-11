@@ -85,7 +85,7 @@ class Funcao(models.Model):
     class Meta:
         db_table = 'gira_funcao'
 
-        @property
+    @property
     def medium_nome(self):
         """Retorna o nome do médium de linha (da tabela gira_medium)."""
         return self.medium_de_linha.nome if self.medium_de_linha else None
