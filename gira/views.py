@@ -150,15 +150,16 @@ def lista_funcoes(request):
     tema = 'exu' if 'exu' in linha or 'pombag' in linha else 'padrao'
 
     contexto = {
-        'user': user,
-        'sess_user_id': user.id,
-        'gira': gira,
-        'cambones': cambones,
-        'organizacao': organizacao_ordered,
-        'limpeza': limpeza,
-        'tema': tema,
-    }
-    return render(request, 'gira/lista_funcoes.html', contexto)
+    'user': user,
+    'sess_user_id': user.id,
+    'gira': gira,
+    'cambones': cambones,
+    'organizacao': organizacao_ordered,
+    'limpeza': limpeza,
+    'tema': tema,
+    'medium_logado': medium_logado,  # 👈 adiciona no contexto
+}
+return render(request, 'gira/lista_funcoes.html', contexto)
 
 
 # -------------------------------------------------------------------
