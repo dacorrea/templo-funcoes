@@ -3,29 +3,43 @@
 {% block content %}
 <div class="container my-4">
 
-  <!-- Cabeçalho da Gira -->
   {% if gira %}
-    <div class="text-center mb-4">
-      <h2 class="text-white mb-1">{{ gira.titulo }}</h2>
-      <p class="text-white-50 mb-0">
-        {{ gira.linha }} – {{ gira.data_hora|date:"d/m/Y H:i" }}
+    <!-- Cabeçalho da Gira -->
+    <div class="mb-4">
+      <p class="text-info mb-1" style="font-size: 0.95rem;">
+        {{ gira.data_hora|date:"d/m/Y H:i" }}
+      </p>
+      <h2 class="text-secondary mb-2" style="font-size: 1.6rem; font-weight: 600;">
+        {{ gira.linha }}
+      </h2>
+      <p class="text-white-50" style="font-size: 0.95rem;">
+        Escolha ou visualize as funções assumidas para esta gira. 
+        Cambones e responsáveis de cada área estão listados abaixo.
       </p>
     </div>
   {% else %}
     <div class="alert alert-warning">Nenhuma gira encontrada.</div>
   {% endif %}
 
+  <hr class="border-light my-4">
+
   <!-- BLOCO: CAMBONES -->
   <section class="mb-5">
-    <h4 class="mb-3 text-white">Cambones</h4>
+    <h4 class="text-secondary mb-3" style="font-size: 1.3rem; font-weight: 600;">Cambones</h4>
 
     {% if cambones %}
       <div class="row g-3">
         {% for f in cambones %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card h-100 shadow-sm text-center p-2">
-              <div class="fw-semibold">{{ f.medium_de_linha.nome|default:"—" }}</div>
-              <div class="text-muted small">{{ f.pessoa.nome|default:"—" }}</div>
+            <div class="card border-0 shadow-sm bg-light-subtle h-100">
+              <div class="card-body p-3 text-start">
+                <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
+                  {{ f.medium_de_linha.nome|default:"—" }}
+                </div>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                  {{ f.pessoa.nome|default:"—" }}
+                </div>
+              </div>
             </div>
           </div>
         {% endfor %}
@@ -35,25 +49,28 @@
     {% endif %}
   </section>
 
-  <hr class="border-light">
+  <hr class="border-light my-4">
 
   <!-- BLOCO: ORGANIZAÇÃO -->
   <section class="mb-5">
-    <h4 class="mb-3 text-white">Organização</h4>
+    <h4 class="text-secondary mb-3" style="font-size: 1.3rem; font-weight: 600;">Organização</h4>
 
     {% if organizacao %}
       <div class="row g-3">
         {% for f in organizacao %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card h-100 shadow-sm position-relative text-center p-2">
+            <div class="card border-0 shadow-sm bg-light-subtle h-100 position-relative">
               {% if f.status|lower == 'vaga' %}
-                <span class="badge bg-danger position-absolute" style="right:10px; top:10px;">Vago</span>
+                <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
               {% endif %}
-              <div class="fw-semibold">{{ f.descricao|default:f.tipo }}</div>
-              <div class="text-muted small">{{ f.pessoa.nome|default:"-" }}</div>
-              {% if f.status|lower == 'vaga' %}
-                <button class="btn btn-sm btn-success mt-2" disabled>Assumir</button>
-              {% endif %}
+              <div class="card-body p-3 text-start">
+                <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
+                  {{ f.descricao|default:f.tipo }}
+                </div>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                  {{ f.pessoa.nome|default:"-" }}
+                </div>
+              </div>
             </div>
           </div>
         {% endfor %}
@@ -63,25 +80,28 @@
     {% endif %}
   </section>
 
-  <hr class="border-light">
+  <hr class="border-light my-4">
 
   <!-- BLOCO: LIMPEZA -->
   <section class="mb-5">
-    <h4 class="mb-3 text-white">Limpeza</h4>
+    <h4 class="text-secondary mb-3" style="font-size: 1.3rem; font-weight: 600;">Limpeza</h4>
 
     {% if limpeza %}
       <div class="row g-3">
         {% for f in limpeza %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card h-100 shadow-sm position-relative text-center p-2">
+            <div class="card border-0 shadow-sm bg-light-subtle h-100 position-relative">
               {% if f.status|lower == 'vaga' %}
-                <span class="badge bg-danger position-absolute" style="right:10px; top:10px;">Vago</span>
+                <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
               {% endif %}
-              <div class="fw-semibold">{{ f.descricao|default:f.tipo }}</div>
-              <div class="text-muted small">{{ f.pessoa.nome|default:"-" }}</div>
-              {% if f.status|lower == 'vaga' %}
-                <button class="btn btn-sm btn-success mt-2" disabled>Assumir</button>
-              {% endif %}
+              <div class="card-body p-3 text-start">
+                <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
+                  {{ f.descricao|default:f.tipo }}
+                </div>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                  {{ f.pessoa.nome|default:"-" }}
+                </div>
+              </div>
             </div>
           </div>
         {% endfor %}
@@ -91,19 +111,9 @@
     {% endif %}
   </section>
 
-  <hr class="border-light">
-</div>
+  <hr class="border-light my-4">
 
-<style>
-.text-white-50 { color: rgba(255,255,255,0.7); }
-.card {
-  background-color: #f8f9fa;
-  border-radius: 0.75rem;
-}
-.card .badge { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
-.card .fw-semibold { color: #212529; }
-@media (max-width: 576px) {
-  .card .badge { top: 8px; right: 8px; }
-}
-</style>
-{% endblock %}
+  <!-- Rodapé / Mensagem final -->
+  <p class="text-white-50 mt-4" style="font-size: 0.9rem; text-align: justify;">
+    Médiuns sem função definida na gira devem permanecer atentos, colaborar com os demais 
+    e
