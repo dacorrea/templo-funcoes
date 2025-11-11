@@ -5,6 +5,11 @@ from django.contrib.auth import get_user_model
 from .models import User
 from django.utils import timezone
 import unicodedata
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from .models import Funcao, Medium
 
 def check_user_model(request):
     User = get_user_model()
@@ -240,3 +245,51 @@ def logout_view(request):
     """Finaliza a sessão do usuário e redireciona para o login."""
     request.session.flush()
     return redirect('gira:login')
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from .models import Funcao, Medium
+
+@login_required
+@require_POST
+@csrf_exempt
+def assumir_funcao(request):
+    funcao_id = request.POST.get('funcao_id')
+    try:
+        medium = Medium.objects.get(user=request.user)
+        funcao = Funcao.objects.get(id=funcao_id)
+
+        if funcao.pessoa_id is None:
+            funcao.pessoa_id = medium.id
+            funcao.save()
+            return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}'})
+        else:
+            return JsonResponse({'status': 'erro', 'mensagem': 'Esta função já foi assumida.'})
+    except Medium.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado.'})
+    except Funcao.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'})
+
+
+@login_required
+@require_POST
+@csrf_exempt
+def desistir_funcao(request):
+    funcao_id = request.POST.get('funcao_id')
+    try:
+        medium = Medium.objects.get(user=request.user)
+        funcao = Funcao.objects.get(id=funcao_id)
+
+        if funcao.pessoa_id == medium.id:
+            funcao.pessoa_id = None
+            funcao.save()
+            return JsonResponse({'status': 'ok', 'mensagem': f'{medium.nome} desistiu da função.'})
+        else:
+            return JsonResponse({'status': 'erro', 'mensagem': 'Você não é responsável por esta função.'})
+    except Medium.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado.'})
+    except Funcao.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'})
+
