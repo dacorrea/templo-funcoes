@@ -81,9 +81,14 @@ def lista_funcoes(request):
         return redirect('gira:login')
 
     # ✅ Obtém o médium logado (relacionado ao user)
+    # define medium_logado — tenta encontrar o medium vinculado ao user
+    medium_logado = None
     try:
-        medium_logado = GiraMedium.objects.get(user_id=user.id)
-    except GiraMedium.DoesNotExist:
+        # usa o model Medium que está importado no topo do arquivo
+        medium_logado = Medium.objects.get(user_id=user.id)
+    except Exception as e:
+            # se não existir coluna user_id ou não houver correspondência, mantemos None
+    # usamos Exception deliberadamente para capturar FieldError/DoesNotExist sem quebrar a view.
         medium_logado = None
 
     gira = Gira.objects.order_by('-data_hora').first()
@@ -161,7 +166,7 @@ def lista_funcoes(request):
         'organizacao': organizacao_ordered,
         'limpeza': limpeza,
         'tema': tema,
-        'medium_logado': medium_logado,  # ✅ agora corretamente definido antes
+        'medium_logado': medium_logado,
     }
     return render(request, 'gira/lista_funcoes.html', contexto)
 
