@@ -75,11 +75,16 @@ def logout_view(request):
 # -------------------------------------------------------------------
 # 🔹 View principal: lista de funções
 # -------------------------------------------------------------------
-
 def lista_funcoes(request):
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
+
+    # ✅ Obtém o médium logado (relacionado ao user)
+    try:
+        medium_logado = GiraMedium.objects.get(user_id=user.id)
+    except GiraMedium.DoesNotExist:
+        medium_logado = None
 
     gira = Gira.objects.order_by('-data_hora').first()
     if not gira:
@@ -87,7 +92,6 @@ def lista_funcoes(request):
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
     funcoes = list(gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('posicao'))
-
 
     cambones, organizacao, limpeza = [], [], []
 
@@ -150,16 +154,17 @@ def lista_funcoes(request):
     tema = 'exu' if 'exu' in linha or 'pombag' in linha else 'padrao'
 
     contexto = {
-    'user': user,
-    'sess_user_id': user.id,
-    'gira': gira,
-    'cambones': cambones,
-    'organizacao': organizacao_ordered,
-    'limpeza': limpeza,
-    'tema': tema,
-    'medium_logado': medium_logado,  # 👈 adiciona no contexto
+        'user': user,
+        'sess_user_id': user.id,
+        'gira': gira,
+        'cambones': cambones,
+        'organizacao': organizacao_ordered,
+        'limpeza': limpeza,
+        'tema': tema,
+        'medium_logado': medium_logado,  # ✅ agora corretamente definido antes
     }
     return render(request, 'gira/lista_funcoes.html', contexto)
+
 
 
 # -------------------------------------------------------------------
