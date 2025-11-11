@@ -158,8 +158,8 @@ def lista_funcoes(request):
     'limpeza': limpeza,
     'tema': tema,
     'medium_logado': medium_logado,  # 👈 adiciona no contexto
-}
-return render(request, 'gira/lista_funcoes.html', contexto)
+    }
+    return render(request, 'gira/lista_funcoes.html', contexto)
 
 
 # -------------------------------------------------------------------
