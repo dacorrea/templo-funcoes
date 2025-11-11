@@ -163,3 +163,8 @@ def assumir_funcao(request, pk):
 
     messages.success(request, 'Função assumida com sucesso.')
     return redirect('gira:lista_funcoes')
+
+def logout_view(request):
+    """Finaliza a sessão do usuário e redireciona para o login."""
+    request.session.flush()
+    return redirect('gira:login')
