@@ -61,7 +61,7 @@
                 </div>
                 <div class="text-end">
                   {% if f.status|lower == 'vaga' %}
-                    <a href="{% url 'gira:assumir_funcao' f.id %}" class="btn btn-sm btn-success">Assumir</a>
+                    <button class="btn btn-sm btn-success" disabled>Assumir</button>
                   {% else %}
                     <!-- nenhum botão quando preenchida -->
                   {% endif %}
