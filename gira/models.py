@@ -18,6 +18,12 @@ class User(models.Model):
     USERNAME_FIELD = 'celular'
     REQUIRED_FIELDS = []
 
+    def is_anonymous(self):
+        return False
+
+    def is_authenticated(self):
+        return True
+
     class Meta:
         db_table = 'gira_user'
 
