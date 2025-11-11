@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from .models import Funcao, Medium
+from .models import Funcao, Medium, User  # ajuste import conforme seu arquivo
 
 
 def check_user_model(request):
@@ -170,15 +170,15 @@ def lista_funcoes(request):
         tema = 'padrao'
 
     contexto = {
-        'user': user,
-        'gira': gira,
-        'cambones': cambones,
-        'organizacao': organizacao_ordered,
-        'limpeza': limpeza,
-        'tema': tema,
-    }
-
-    return render(request, 'gira/lista_funcoes.html', contexto)
+    'user': user,                 # objeto do seu _get_user (mantém compatibilidade)
+    'sess_user_id': user.id,      # id do gira_user (usado pelo template)
+    'gira': gira,
+    'cambones': cambones,
+    'organizacao': organizacao_ordered,
+    'limpeza': limpeza,
+    'tema': tema,
+}
+return render(request, 'gira/lista_funcoes.html', contexto)
 
 
 
@@ -249,51 +249,73 @@ def logout_view(request):
 
 
 
-@login_required
+
+
 @require_POST
 @csrf_exempt
 def assumir_funcao(request):
+    # usa o user_id guardado na sessão (login custom sem Django auth)
+    sess_user_id = request.session.get('user_id')
+    if not sess_user_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}, status=401)
+
     funcao_id = request.POST.get('funcao_id')
+    if not funcao_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'ID da função ausente.'}, status=400)
+
     try:
-        # Busca o médium associado ao usuário logado
-        medium = Medium.objects.get(user_id=request.user.id)
-        funcao = Funcao.objects.get(id=funcao_id)
-
-        if funcao.pessoa_id is None:
-            funcao.pessoa_id = medium.id
-            funcao.status = "Preenchida"
-            funcao.save()
-            return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}'})
-        else:
-            return JsonResponse({'status': 'erro', 'mensagem': 'Esta função já foi assumida.'})
-
+        medium = Medium.objects.get(user_id=sess_user_id)
     except Medium.DoesNotExist:
-        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado.'})
+        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado para o usuário.'}, status=404)
+
+    try:
+        funcao = Funcao.objects.get(id=funcao_id)
     except Funcao.DoesNotExist:
-        return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'})
+        return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'}, status=404)
+
+    if funcao.pessoa_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Esta função já foi assumida.'}, status=409)
+
+    # não permitir assumir cambone (regras do sistema)
+    if (funcao.tipo or '').lower().startswith('cambone'):
+        return JsonResponse({'status': 'erro', 'mensagem': 'Não é permitido assumir cambones via UI.'}, status=403)
+
+    funcao.pessoa_id = medium.id
+    funcao.status = 'Preenchida'
+    funcao.save()
+
+    return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}', 'funcao_id': funcao.id})
 
 
-@login_required
 @require_POST
 @csrf_exempt
 def desistir_funcao(request):
+    sess_user_id = request.session.get('user_id')
+    if not sess_user_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}, status=401)
+
     funcao_id = request.POST.get('funcao_id')
+    if not funcao_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'ID da função ausente.'}, status=400)
+
     try:
-        medium = Medium.objects.get(user_id=request.user.id)
-        funcao = Funcao.objects.get(id=funcao_id)
-
-        # Permite desistir apenas se for o médium logado
-        if funcao.pessoa_id == medium.id:
-            funcao.pessoa_id = None
-            funcao.status = "Vaga"
-            funcao.save()
-            return JsonResponse({'status': 'ok', 'mensagem': f'{medium.nome} desistiu da função.'})
-        else:
-            return JsonResponse({'status': 'erro', 'mensagem': 'Você não é responsável por esta função.'})
-
+        medium = Medium.objects.get(user_id=sess_user_id)
     except Medium.DoesNotExist:
-        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado.'})
+        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado para o usuário.'}, status=404)
+
+    try:
+        funcao = Funcao.objects.get(id=funcao_id)
     except Funcao.DoesNotExist:
-        return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'})
+        return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'}, status=404)
+
+    if funcao.pessoa_id != medium.id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Você não é responsável por esta função.'}, status=403)
+
+    funcao.pessoa_id = None
+    funcao.status = 'Vaga'
+    funcao.save()
+
+    return JsonResponse({'status': 'ok', 'mensagem': f'{medium.nome} desistiu da função.', 'funcao_id': funcao.id})
+
 
 
