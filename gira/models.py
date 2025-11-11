@@ -29,6 +29,12 @@ class User(models.Model):
 
     def __str__(self):
         return f"{self.nome} ({self.celular})"
+        
+    @property
+    def medium(self):
+        """Retorna o médium associado a este usuário, se houver"""
+        from .models import Medium
+        return Medium.objects.filter(user_id=self.id).first()
 
 
 # ✅ ajustado para refletir a tabela gira_medium
@@ -98,6 +104,15 @@ class Funcao(models.Model):
 
     def __str__(self):
         return f"{self.tipo} - {self.posicao or ''} - {self.status}"
+        
+    @property
+    def nome_responsavel(self):
+        """Nome do médium responsável pela função, ou '—' se vaga."""
+        if self.pessoa and self.pessoa.medium:
+            return self.pessoa.medium.nome
+        elif self.pessoa:
+            return self.pessoa.nome
+        return "—"
 
 
 # ✅ atualizado conforme gira_historico (colunas reais)
