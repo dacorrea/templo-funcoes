@@ -87,7 +87,7 @@
                     <button class="btn btn-sm btn-success btn-assumir"
                             data-funcao="{{ f.id }}"
                             style="font-size: 0.8rem;">Assumir</button>
-                  {% elif f.pessoa and f.pessoa.user_id == user.id %}
+                  {% elif f.pessoa and f.pessoa.user_id == sess_user_id %}
                     <span>{{ f.pessoa.nome }}</span>
                     <button class="btn btn-link text-danger btn-desistir"
                             data-funcao="{{ f.id }}"
@@ -135,7 +135,7 @@
                     <button class="btn btn-sm btn-success btn-assumir"
                             data-funcao="{{ f.id }}"
                             style="font-size: 0.8rem;">Assumir</button>
-                  {% elif f.pessoa and f.pessoa.user_id == user.id %}
+                  {% elif f.pessoa and f.pessoa.user_id == sess_user_id %}
                     <span>{{ f.pessoa.nome }}</span>
                     <button class="btn btn-link text-danger btn-desistir"
                             data-funcao="{{ f.id }}"
@@ -208,6 +208,12 @@
 </style>
 
 <script>
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+const csrftoken = getCookie('csrftoken');
+
 document.addEventListener('DOMContentLoaded', function() {
   function mostrarMensagem(msg, tipo='info') {
     const alerta = document.createElement('div');
@@ -218,32 +224,44 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => alerta.remove(), 2500);
   }
 
-  // Assumir
+  // ✅ Assumir função
   document.querySelectorAll('.btn-assumir').forEach(btn => {
     btn.addEventListener('click', () => {
       const funcao_id = btn.dataset.funcao;
       fetch("{% url 'gira:assumir_funcao' %}", {
         method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+        headers: {
+          'X-CSRFToken': csrftoken,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
         body: new URLSearchParams({funcao_id})
       })
       .then(r => r.json())
-      .then(d => mostrarMensagem(d.mensagem, d.status === 'ok' ? 'success' : 'danger'))
+      .then(d => {
+        mostrarMensagem(d.mensagem, d.status === 'ok' ? 'success' : 'danger');
+        if (d.status === 'ok') setTimeout(() => location.reload(), 700);
+      })
       .catch(() => mostrarMensagem('Erro ao assumir função', 'danger'));
     });
   });
 
-  // Desistir
+  // ✅ Desistir função
   document.querySelectorAll('.btn-desistir').forEach(btn => {
     btn.addEventListener('click', () => {
       const funcao_id = btn.dataset.funcao;
       fetch("{% url 'gira:desistir_funcao' %}", {
         method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+        headers: {
+          'X-CSRFToken': csrftoken,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
         body: new URLSearchParams({funcao_id})
       })
       .then(r => r.json())
-      .then(d => mostrarMensagem(d.mensagem, d.status === 'ok' ? 'warning' : 'danger'))
+      .then(d => {
+        mostrarMensagem(d.mensagem, d.status === 'ok' ? 'warning' : 'danger');
+        if (d.status === 'ok') setTimeout(() => location.reload(), 700);
+      })
       .catch(() => mostrarMensagem('Erro ao desistir da função', 'danger'));
     });
   });
