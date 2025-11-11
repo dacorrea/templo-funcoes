@@ -1,25 +1,41 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">Templo</a>
+{% load static %}
 
-    <!-- Botão hamburguer (colapso das opções) -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#giraNavbar" aria-controls="giraNavbar" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}T.U. Vó Rita das Almas{% endblock %}</title>
 
-    <!-- Conteúdo que entra no collapse -->
-    <div class="collapse navbar-collapse" id="giraNavbar">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <!-- links se houver -->
-      </ul>
+    <!-- CSS principal -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
 
-      <!-- AQUI: manter Olá, Diego e botão Sair sempre visíveis (fora do collapse) -->
-    </div>
+    <!-- Cabeçalho -->
+    <header class="navbar">
+        <div class="logo-container">
+            <img src="{% static 'img/logo.png' %}" alt="Logo Templo Vó Rita das Almas" class="logo">
+            <span class="titulo">T.U. Vó Rita das Almas</span>
+        </div>
+        <nav class="menu">
+            <a href="{% url 'index' %}">Início</a>
+            <a href="#">Giras</a>
+            <a href="#">Cambones</a>
+            <a href="#">Sobre</a>
+        </nav>
+    </header>
 
-    <!-- Colocamos greeting e logout sempre visíveis, fora do collapse -->
-    <div class="d-flex align-items-center">
-      <span class="me-3 text-white">Olá, {{ request.session.user_nome|default:"Visitante" }}</span>
-      <a href="{% url 'gira:logout' %}" class="btn btn-outline-light btn-sm">Sair</a>
-    </div>
-  </div>
-</nav>
+    <!-- Conteúdo dinâmico -->
+    <main class="conteudo">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="rodape">
+        <p>&copy; 2025 Templo de Umbanda Vó Rita das Almas</p>
+    </footer>
+
+</body>
+</html>
