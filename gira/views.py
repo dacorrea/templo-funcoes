@@ -88,6 +88,7 @@ def lista_funcoes(request):
 
     funcoes = list(gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('posicao'))
 
+
     cambones, organizacao, limpeza = [], [], []
 
     # Agrupamento
