@@ -70,7 +70,7 @@ def _display_name_for_person(funcao):
     return '-'
 
 def lista_funcoes(request):
-    """Lista de funções da última gira, agrupadas por blocos (Cambones, Organização, Limpeza)."""
+    """Lista de funções da última gira, agrupadas e ordenadas."""
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
@@ -80,14 +80,13 @@ def lista_funcoes(request):
         messages.info(request, 'Nenhuma gira cadastrada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
-        # Carrega todas as funções da gira (com os relacionamentos necessários)
-    funcoes = (
-        gira.funcoes
-        .select_related('medium_de_linha', 'pessoa')
-        .order_by('tipo', 'posicao')
-    )
+    # Carrega funções com joins para evitar N+1
+    funcoes = list(gira.funcoes.select_related('medium_de_linha', 'pessoa').all())
 
-    # Agrupa as funções em listas por tipo
+    # Define ordem específica para os grupos
+    ordem_organizacao = ["Portão", "Distribuir senha", "Lojinha", "Chamar senha"]
+
+    # Agrupamentos
     cambones = []
     organizacao = []
     limpeza = []
@@ -97,33 +96,38 @@ def lista_funcoes(request):
         chave = (f.chave or '').lower()
         descricao = (f.descricao or '').lower()
 
+        # Identifica Cambones
         if 'cambone' in tipo or 'cambone' in chave or 'cambone' in descricao:
             cambones.append(f)
-        elif any(k in tipo or k in chave or k in descricao for k in ['organ', 'senha', 'portão', 'lojinha', 'chamar', 'assist', 'venda']):
+        # Organização
+        elif any(pal.lower() in descricao for pal in ordem_organizacao):
             organizacao.append(f)
+        # Limpeza
         elif 'limp' in tipo or 'limp' in chave or 'limp' in descricao:
             limpeza.append(f)
         else:
             organizacao.append(f)
 
-    # Ordenação especial dos cambones (Mãe Bruna primeiro, depois alfabética)
-    def sort_cambones(item):
-        nome = item.medium_de_linha.nome if item.medium_de_linha else ''
-        if nome.strip().lower() == 'mãe bruna':
-            return ('', '')
-        return (nome.lower(), nome.lower())
+    # Ordena Cambones por nome do médium (alfabético, "Mãe Bruna" primeiro)
+    cambones.sort(key=lambda x: ('' if (x.medium_de_linha and x.medium_de_linha.nome.lower() == 'mãe bruna') else x.medium_de_linha.nome if x.medium_de_linha else 'zzzz'))
 
-    cambones.sort(key=sort_cambones)
+    # Ordena Organização conforme ordem pré-definida
+    organizacao.sort(key=lambda x: ordem_organizacao.index(x.descricao) if x.descricao in ordem_organizacao else 99)
 
-    contexto = {
+    # Ordena Limpeza por nome (ou posicao se houver)
+    limpeza.sort(key=lambda x: x.posicao or '')
+
+    context = {
         'user': user,
         'gira': gira,
         'cambones': cambones,
         'organizacao': organizacao,
         'limpeza': limpeza,
+        'ordem_organizacao': ordem_organizacao,  # 🔹 envia lista pro template
     }
 
-    return render(request, 'gira/lista_funcoes.html', contexto)
+    return render(request, 'gira/lista_funcoes.html', context)
+
 
 
     # Prepara objetos simples para o template (com nome exibível)
