@@ -85,6 +85,17 @@ class Funcao(models.Model):
     class Meta:
         db_table = 'gira_funcao'
 
+        @property
+    def medium_nome(self):
+        """Retorna o nome do médium de linha (da tabela gira_medium)."""
+        return self.medium_de_linha.nome if self.medium_de_linha else None
+
+    @property
+    def pessoa_nome(self):
+        """Retorna o nome do usuário que assumiu a função (da tabela gira_user)."""
+        return self.pessoa.nome if self.pessoa else None
+
+
     def __str__(self):
         return f"{self.tipo} - {self.posicao or ''} - {self.status}"
 
