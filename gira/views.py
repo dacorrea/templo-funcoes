@@ -184,30 +184,30 @@ return render(request, 'gira/lista_funcoes.html', contexto)
 
 
 
-    # Prepara objetos simples para o template (com nome exibível)
-    def prepare_list(lst):
-        out = []
-        for f in lst:
-            out.append({
-                'id': f.id,
-                'chave': f.chave,
-                'tipo': f.tipo,
-                'posicao': f.posicao or '',
-                'status': f.status,
-                'descricao': f.descricao or '',
-                'medium_nome': (f.medium_de_linha.nome if f.medium_de_linha else ''),
-                'pessoa_nome': _display_name_for_person(f),
-            })
-        return out
+# Prepara objetos simples para o template (com nome exibível)
+def prepare_list(lst):
+    out = []
+    for f in lst:
+        out.append({
+            'id': f.id,
+            'chave': f.chave,
+            'tipo': f.tipo,
+            'posicao': f.posicao or '',
+            'status': f.status,
+            'descricao': f.descricao or '',
+            'medium_nome': (f.medium_de_linha.nome if f.medium_de_linha else ''),
+            'pessoa_nome': _display_name_for_person(f),
+        })
+    return out
 
-    context = {
-        'user': user,
-        'gira': gira,
-        'cambones': prepare_list(cambones),
-        'organizacao': prepare_list(organizacao),
-        'limpeza': prepare_list(limpeza),
-    }
-    return render(request, 'gira/lista_funcoes.html', context)
+context = {
+    'user': user,
+    'gira': gira,
+    'cambones': prepare_list(cambones),
+    'organizacao': prepare_list(organizacao),
+    'limpeza': prepare_list(limpeza),
+}
+return render(request, 'gira/lista_funcoes.html', context)
 
 def assumir_funcao(request, pk):
     user = _get_user(request)
