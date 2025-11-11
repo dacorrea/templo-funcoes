@@ -4,13 +4,17 @@
 {% comment %}
 Define o tema dinamicamente com base no nome da linha.
 {% endcomment %}
-{% with linha_nome=gira.linha|lower %}
-  {% if "exu" in linha_nome or "pombagira" in linha_nome or "pombagiras" in linha_nome %}
-    {% with set_theme="exu" %}
-  {% else %}
-    {% with set_theme="padrao" %}
-  {% endif %}
-{% endwith %}
+{% if gira.linha %}
+  {% with linha_nome=gira.linha|lower %}
+    {% if "exu" in linha_nome or "pombagira" in linha_nome or "pombagiras" in linha_nome %}
+      {% with tema="exu" %}
+    {% else %}
+      {% with tema="padrao" %}
+    {% endif %}
+  {% endwith %}
+{% else %}
+  {% with tema="padrao" %}
+{% endif %}
 
 <div class="container my-4">
 
@@ -19,19 +23,19 @@ Define o tema dinamicamente com base no nome da linha.
     <div class="mb-4 text-start">
       <p class="mb-1" 
          style="font-size: 0.95rem; font-weight: 500;
-                color: {% if set_theme == 'exu' %}#ff4d4d{% else %}#5fa9dd{% endif %};">
+                color: {% if tema == 'exu' %}#ff4d4d{% else %}#5fa9dd{% endif %};">
         {{ gira.data_hora|date:"d/m/Y H:i" }}
       </p>
 
       <h2 class="mb-2" 
           style="font-size: 1.6rem; font-weight: 700;
-                 color: {% if set_theme == 'exu' %}#c00000{% else %}#3d3d3d{% endif %};">
+                 color: {% if tema == 'exu' %}#c00000{% else %}#3d3d3d{% endif %};">
         {{ gira.linha }}
       </h2>
 
       <p class="mb-0" 
          style="font-size: 0.95rem; 
-                color: {% if set_theme == 'exu' %}#a0a0a0{% else %}#666666{% endif %};">
+                color: {% if tema == 'exu' %}#a0a0a0{% else %}#666666{% endif %};">
         Escolha ou visualize as funções assumidas para esta gira.<br>
         Cambones e responsáveis de cada área estão listados abaixo.
       </p>
@@ -41,13 +45,13 @@ Define o tema dinamicamente com base no nome da linha.
   {% endif %}
 
   <hr class="my-4" 
-      style="border-color: {% if set_theme == 'exu' %}#660000{% else %}#cccccc{% endif %};">
+      style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
 
   <!-- BLOCO: CAMBONES -->
   <section class="mb-5">
     <h4 class="mb-3" 
         style="font-size: 1.3rem; font-weight: 600;
-               color: {% if set_theme == 'exu' %}#b00000{% else %}#3d3d3d{% endif %};">
+               color: {% if tema == 'exu' %}#b00000{% else %}#3d3d3d{% endif %};">
       Cambones
     </h4>
 
@@ -55,7 +59,7 @@ Define o tema dinamicamente com base no nome da linha.
       <div class="row g-3">
         {% for f in cambones %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm {% if set_theme == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100">
+            <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100">
               <div class="card-body p-3 text-start">
                 <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
                   {{ f.medium_de_linha.nome|default:"—" }}
@@ -74,13 +78,13 @@ Define o tema dinamicamente com base no nome da linha.
   </section>
 
   <hr class="my-4" 
-      style="border-color: {% if set_theme == 'exu' %}#660000{% else %}#cccccc{% endif %};">
+      style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
 
   <!-- BLOCO: ORGANIZAÇÃO -->
   <section class="mb-5">
     <h4 class="mb-3" 
         style="font-size: 1.3rem; font-weight: 600;
-               color: {% if set_theme == 'exu' %}#b00000{% else %}#3d3d3d{% endif %};">
+               color: {% if tema == 'exu' %}#b00000{% else %}#3d3d3d{% endif %};">
       Organização
     </h4>
 
@@ -88,7 +92,7 @@ Define o tema dinamicamente com base no nome da linha.
       <div class="row g-3">
         {% for f in organizacao %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm {% if set_theme == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
+            <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
               {% if f.status|lower == 'vaga' %}
                 <span class="badge bg-danger position-absolute" 
                       style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
@@ -111,13 +115,13 @@ Define o tema dinamicamente com base no nome da linha.
   </section>
 
   <hr class="my-4" 
-      style="border-color: {% if set_theme == 'exu' %}#660000{% else %}#cccccc{% endif %};">
+      style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
 
   <!-- BLOCO: LIMPEZA -->
   <section class="mb-5">
     <h4 class="mb-3" 
         style="font-size: 1.3rem; font-weight: 600;
-               color: {% if set_theme == 'exu' %}#b00000{% else %}#3d3d3d{% endif %};">
+               color: {% if tema == 'exu' %}#b00000{% else %}#3d3d3d{% endif %};">
       Limpeza
     </h4>
 
@@ -125,7 +129,7 @@ Define o tema dinamicamente com base no nome da linha.
       <div class="row g-3">
         {% for f in limpeza %}
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm {% if set_theme == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
+            <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
               {% if f.status|lower == 'vaga' %}
                 <span class="badge bg-danger position-absolute" 
                       style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
@@ -148,12 +152,12 @@ Define o tema dinamicamente com base no nome da linha.
   </section>
 
   <hr class="my-4" 
-      style="border-color: {% if set_theme == 'exu' %}#660000{% else %}#cccccc{% endif %};">
+      style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
 
   <!-- Rodapé / Mensagem final -->
   <p class="mt-4" 
      style="font-size: 0.95rem; text-align: center; 
-            color: {% if set_theme == 'exu' %}#a0a0a0{% else %}#666666{% endif %};">
+            color: {% if tema == 'exu' %}#a0a0a0{% else %}#666666{% endif %};">
     Médiuns sem função definida na gira devem permanecer atentos, colaborar com os demais 
     e apoiar a assistência quando necessário.
   </p>
@@ -161,7 +165,7 @@ Define o tema dinamicamente com base no nome da linha.
 
 <style>
 /* Barra superior com tema de Exu */
-{% if set_theme == 'exu' %}
+{% if tema == 'exu' %}
 .navbar {
   background: linear-gradient(to right, #000000, #4d0000, #990000);
   color: white !important;
