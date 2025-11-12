@@ -2,21 +2,30 @@
 {% block content %}
 <div class="container py-5 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
   <div class="col-md-5">
-    <div class="card border-0 shadow-lg" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border-radius: 20px;">
+    <div class="card border-0 shadow-lg" 
+         style="background: rgba(255,255,255,0.08); backdrop-filter: blur(6px); border-radius: 20px;">
       <div class="card-body p-4">
-        <h4 class="text-center mb-4 fw-semibold text-light">Acesse sua conta</h4>
+        <h4 class="text-center mb-4 fw-semibold" style="color: var(--branco); opacity: 0.9;">
+          Para acessar, informe seu celular
+        </h4>
 
         <form method="post">{% csrf_token %}
           <div class="mb-3 position-relative">
             <i class="bi bi-phone position-absolute" 
-               style="left: 12px; top: 50%; transform: translateY(-50%); color: #aaa;"></i>
-            <input type="text" name="celular" class="form-control ps-5 py-2" 
-                   placeholder="Celular com DDD" required
-                   style="border-radius: 10px; background-color: rgba(255,255,255,0.15); color: #fff; border: none;">
+               style="left: 12px; top: 50%; transform: translateY(-50%); color: var(--azul-bebe);"></i>
+            <input 
+              type="text" 
+              name="celular" 
+              id="celular" 
+              class="form-control ps-5 py-2"
+              placeholder="(XX) XXXXX-XXXX"
+              required
+              maxlength="15"
+              style="border-radius: 10px; background-color: rgba(255,255,255,0.15); color: #fff; border: none;">
           </div>
 
           <button class="btn w-100 py-2 fw-semibold" 
-                  style="background-color: #e53935; border: none; border-radius: 10px; color: #fff; transition: 0.3s;">
+                  style="background-color: var(--azul-bebe) !important; border: none; border-radius: 10px; color: #000; transition: 0.3s;">
             Entrar
           </button>
         </form>
@@ -28,5 +37,23 @@
     </div>
   </div>
 </div>
-{% endblock %}
 
+<script>
+  // Máscara automática para o campo de celular
+  document.addEventListener('DOMContentLoaded', function() {
+    const celularInput = document.getElementById('celular');
+    celularInput.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length > 11) value = value.slice(0, 11);
+      
+      if (value.length > 6) {
+        e.target.value = `(${value.slice(0,2)}) ${value.slice(2,7)}-${value.slice(7)}`;
+      } else if (value.length > 2) {
+        e.target.value = `(${value.slice(0,2)}) ${value.slice(2)}`;
+      } else if (value.length > 0) {
+        e.target.value = `(${value}`;
+      }
+    });
+  });
+</script>
+{% endblock %}
