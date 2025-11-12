@@ -178,9 +178,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const csrftoken = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop();
   const toast = document.getElementById('toast-funcao');
 
-  // id e nome do medium logado (injetados pelo template). NÃO serão exibidos, apenas usados pelo JS.
   const mediumId = "{{ medium_logado.id|default:'' }}";
   const mediumNome = "{{ medium_logado.nome|default:user.nome|escapejs }}";
+
+  console.debug("[INIT] medium_logado:", { id: mediumId, nome: mediumNome });
 
   function showToast(msg, color='#198754') {
     toast.textContent = msg;
@@ -192,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderOwned(card) {
     const meta = card.querySelector('.text-muted');
     if (!meta) return;
+    console.debug("[renderOwned] Atualizando card", card.dataset.funcao, "para médium", mediumId);
     meta.innerHTML = `<span class="nome-medium" data-medium-id="${mediumId}">${mediumNome}</span>
       <button class="btn btn-link text-danger btn-desistir" data-funcao="${card.dataset.funcao}"
         title="Desistir" style="font-size:0.8rem;padding:0;margin-left:5px;">
@@ -202,15 +204,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderVacant(card) {
     const meta = card.querySelector('.text-muted');
     if (!meta) return;
+    console.debug("[renderVacant] Liberando card", card.dataset.funcao);
     meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${card.dataset.funcao}" style="font-size:0.8rem;">Assumir</button>`;
     card.dataset.pessoa = '';
   }
 
-  // Inicial: adiciona botão "desistir" aos cards cujo span.nome-medium tenha data-medium-id === mediumId
+  // Inicial: mostra botão “Desistir” nos cards já assumidos
   document.querySelectorAll('.nome-medium').forEach(span => {
     const mid = span.dataset.mediumId || '';
     if (mid && mid.toString() === mediumId.toString()) {
-      // evita duplicar o botão
+      console.debug("[INIT] Card pertencente ao médium logado encontrado:", span.closest('[data-funcao]')?.dataset.funcao);
       if (!span.parentElement.querySelector('.btn-desistir')) {
         span.insertAdjacentHTML('beforeend',
           `<button class="btn btn-link text-danger btn-desistir" data-funcao="${span.closest('[data-funcao]')?.dataset.funcao || ''}"
@@ -219,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ASSUMIR (otimista)
+  // ASSUMIR
   document.addEventListener('click', e => {
     const btn = e.target.closest('.btn-assumir');
     if (!btn) return;
@@ -227,11 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = document.getElementById(`card-${funcaoId}`);
     if (!card) return;
 
-    // atualiza UI imediatamente usando mediumId/mediumNome (sem expor id)
+    console.debug("[CLICK] Assumir função:", funcaoId, "→ médium:", mediumId);
+
     renderOwned(card);
     showToast('Assumindo função...', '#0d6efd');
 
-    // envia POST (servidor continua validando via sessão)
     fetch("{% url 'gira:assumir_funcao' %}", {
       method: 'POST',
       headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
@@ -239,21 +242,22 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(r => r.json())
     .then(d => {
+      console.debug("[RESPONSE] Assumir:", d);
       if (d.status !== 'ok') {
-        // reverte UI
         renderVacant(card);
         showToast(d.mensagem || 'Erro ao assumir', '#dc3545');
       } else {
         showToast(d.mensagem || 'Função assumida', '#198754');
       }
     })
-    .catch(() => {
+    .catch(err => {
+      console.debug("[ERROR] Assumir:", err);
       renderVacant(card);
       showToast('Erro de rede ao assumir', '#dc3545');
     });
   });
 
-  // DESISTIR (otimista)
+  // DESISTIR
   document.addEventListener('click', e => {
     const btn = e.target.closest('.btn-desistir');
     if (!btn) return;
@@ -261,7 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = document.getElementById(`card-${funcaoId}`);
     if (!card) return;
 
-    // UI imediata: volta para vaga
+    console.debug("[CLICK] Desistir função:", funcaoId, "→ médium:", mediumId);
+
     renderVacant(card);
     showToast('Desistindo da função...', '#ffc107');
 
@@ -272,15 +277,16 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(r => r.json())
     .then(d => {
+      console.debug("[RESPONSE] Desistir:", d);
       if (d.status !== 'ok') {
-        // se falhou, volta para estado assumido (usa mediumNome)
         renderOwned(card);
         showToast(d.mensagem || 'Erro ao desistir', '#dc3545');
       } else {
         showToast(d.mensagem || 'Função liberada', '#0dcaf0');
       }
     })
-    .catch(() => {
+    .catch(err => {
+      console.debug("[ERROR] Desistir:", err);
       renderOwned(card);
       showToast('Erro de rede ao desistir', '#dc3545');
     });
@@ -288,4 +294,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 </script>
+
 {% endblock %}
