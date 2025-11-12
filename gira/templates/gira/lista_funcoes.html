@@ -106,7 +106,7 @@
                   {% elif f.pessoa_medium and medium_logado and f.pessoa_medium.id == medium_logado.id %}
                     <!-- você é o médium que está nessa função: mostra botão desistir -->
                     <span>{{ f.pessoa_medium.nome }}</span>
-                    <small style="font-size:0.75rem; color:#666;">(m#{{ f.pessoa_medium.id }})</small>
+                    <small style="font-size:0.75rem; color:#666;">(m#{{ f.pessoa_medium }})(m#{{ medium_logado }})(m#{{ f.pessoa_medium.id }})</small>
                     <button class="btn btn-link text-danger btn-desistir" data-funcao="{{ f.id }}" title="Desistir" style="font-size: 0.8rem; padding:0; margin-left:5px;">
                       <i class="bi bi-x-circle"></i>
                     </button>
