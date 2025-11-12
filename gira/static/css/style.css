@@ -32,6 +32,28 @@
     color: var(--azul-bebe);
 }
 
+.toast-funcao {
+  visibility: hidden;
+  min-width: 280px;
+  max-width: 90vw; /* Evita que o texto quebre fora da tela */
+  background-color: #333;
+  color: #fff;
+  text-align: center; /* Centraliza o texto */
+  display: flex;               /* ✅ garante centralização robusta */
+  align-items: center;         /* ✅ centraliza verticalmente */
+  justify-content: center;     /* ✅ centraliza horizontalmente */
+  border-radius: 8px;
+  padding: 10px 16px;          /* espaço lateral um pouco maior */
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
 /* Ícone do menu hambúrguer */
 .navbar-toggler {
     border-color: var(--branco);
@@ -40,6 +62,16 @@
 .navbar-toggler-icon {
     filter: invert(1);
 }
+
+.logout-btn {
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  color: #fff !important;
+}
+.logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: #fff !important;
+}
+
 
 /* Fundo geral */
 body.bg-light {
