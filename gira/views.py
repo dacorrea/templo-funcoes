@@ -48,6 +48,8 @@ def _normalize(s: str) -> str:
 # -------------------------------------------------------------------
 
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('gira:lista_funcoes')
     if request.method == 'POST':
         celular = ''.join(ch for ch in request.POST.get('celular', '') if ch.isdigit())
         try:
