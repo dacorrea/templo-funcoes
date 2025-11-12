@@ -1,4 +1,5 @@
 {% extends 'gira/base.html' %}
+
 {% block content %}
 <div class="container my-4">
 
@@ -28,35 +29,65 @@
   <hr class="my-4"
       style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
 
-  <!-- BLOCO: ORGANIZAÇÃO -->
+  <!-- BLOCO CAMBONES -->
   <section class="mb-5">
     <h4 class="mb-3"
         style="font-size: 1.3rem; font-weight: 600;
                color: {% if tema == 'exu' %}#b00000{% else %}#2e2e2e{% endif %};">
+      Cambones
+    </h4>
+
+    {% if cambones %}
+      <div class="row g-3">
+        {% for f in cambones %}
+          <div id="card-{{ f.id }}" data-funcao="{{ f.id }}" data-pessoa="{{ f.pessoa.id|default:'' }}" class="col-6 col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
+              <div class="card-body p-3 text-start">
+                <div class="fw-semibold text-dark" style="font-size: 0.95rem;">{{ f.medium_de_linha.nome|default:"—" }}</div>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                  {% if f.status|lower == 'vaga' %}
+                    <button class="btn btn-sm btn-success btn-assumir" data-funcao="{{ f.id }}" style="font-size: 0.8rem;">Assumir</button>
+                  {% else %}
+                    <span>{{ f.pessoa.nome|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted fst-italic">Nenhum cambone cadastrado.</p>
+    {% endif %}
+  </section>
+
+  <hr class="my-4" style="border-color:{% if tema == 'exu' %}#660000{% else %}#ccc{% endif %};">
+
+  <!-- BLOCO ORGANIZAÇÃO -->
+  <section class="mb-5">
+    <h4 class="mb-3"
+        style="font-size: 1.3rem; font-weight: 600;
+               color:{% if tema == 'exu' %}#b00000{% else %}#2e2e2e{% endif %};">
       Organização
     </h4>
 
     {% if organizacao %}
       <div class="row g-3">
         {% for f in organizacao %}
-          <div id="card-{{ f.id }}" class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative" data-funcao="{{ f.id }}" data-pessoa="{{ f.pessoa.id|default:'' }}">
-            {% if f.status|lower == 'vaga' %}
-              <span class="badge bg-danger position-absolute"
-                    style="right:10px; top:10px; font-size: 0.7rem;">Vago</span>
-            {% endif %}
-            <div class="card-body p-3 text-start">
-              <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
-                {{ f.descricao|default:f.tipo }}
-              </div>
-              <div class="text-muted" style="font-size: 0.85rem;">
-                {% if f.status|lower == 'vaga' %}
-                  <button class="btn btn-sm btn-success btn-assumir"
-                          data-funcao="{{ f.id }}"
-                          style="font-size: 0.8rem;">Assumir</button>
-                {% else %}
-                  <span>{{ f.pessoa.nome|default:"—" }}</span>
-                  <!-- botão desistir será controlado pelo JS -->
-                {% endif %}
+          <div id="card-{{ f.id }}" data-funcao="{{ f.id }}" data-pessoa="{{ f.pessoa.id|default:'' }}" class="col-6 col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
+              {% if f.status|lower == 'vaga' %}
+                <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>
+              {% endif %}
+              <div class="card-body p-3 text-start">
+                <div class="fw-semibold text-dark" style="font-size:0.95rem;">{{ f.descricao|default:f.tipo }}</div>
+                <div class="text-muted" style="font-size:0.85rem;">
+                  {% if f.status|lower == 'vaga' %}
+                    <button class="btn btn-sm btn-success btn-assumir" data-funcao="{{ f.id }}" style="font-size:0.8rem;">Assumir</button>
+                  {% else %}
+                    <span>{{ f.pessoa.nome|default:"—" }}</span>
+                  {% endif %}
+                </div>
               </div>
             </div>
           </div>
@@ -67,22 +98,58 @@
     {% endif %}
   </section>
 
+  <hr class="my-4" style="border-color:{% if tema == 'exu' %}#660000{% else %}#ccc{% endif %};">
+
+  <!-- BLOCO LIMPEZA -->
+  <section class="mb-5">
+    <h4 class="mb-3"
+        style="font-size: 1.3rem; font-weight: 600;
+               color:{% if tema == 'exu' %}#b00000{% else %}#2e2e2e{% endif %};">
+      Limpeza
+    </h4>
+
+    {% if limpeza %}
+      <div class="row g-3">
+        {% for f in limpeza %}
+          <div id="card-{{ f.id }}" data-funcao="{{ f.id }}" data-pessoa="{{ f.pessoa.id|default:'' }}" class="col-6 col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
+              {% if f.status|lower == 'vaga' %}
+                <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>
+              {% endif %}
+              <div class="card-body p-3 text-start">
+                <div class="fw-semibold text-dark" style="font-size:0.95rem;">Limpeza</div>
+                <div class="text-muted" style="font-size:0.85rem;">
+                  {% if f.status|lower == 'vaga' %}
+                    <button class="btn btn-sm btn-success btn-assumir" data-funcao="{{ f.id }}" style="font-size:0.8rem;">Assumir</button>
+                  {% else %}
+                    <span>{{ f.pessoa.nome|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted fst-italic">Nenhuma função de limpeza cadastrada.</p>
+    {% endif %}
+  </section>
+
   <p class="mt-4 text-center"
-     style="font-size: 0.95rem;
-            color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
+     style="font-size:0.95rem; color:{% if tema == 'exu' %}#d0d0d0{% else %}#444{% endif %};">
     Médiuns sem função definida devem colaborar com os demais.
   </p>
 </div>
 
-<div id="toast-funcao" class="toast-funcao">Função assumida com sucesso!</div>
+<!-- ✅ Toast -->
+<div id="toast-funcao" class="toast-funcao"></div>
 
 <style>
 .toast-funcao {
   visibility: hidden;
-  min-width: 300px;
+  min-width: 280px;
   background-color: #333;
   color: #fff;
-  text-align: center;
   border-radius: 8px;
   padding: 10px;
   position: fixed;
@@ -91,7 +158,7 @@
   transform: translateX(-50%);
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.5s, visibility 0.5s;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 .toast-funcao.show {
   visibility: visible;
@@ -104,88 +171,73 @@ document.addEventListener('DOMContentLoaded', () => {
   const csrftoken = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop();
   const toast = document.getElementById('toast-funcao');
   const mediumId = "{{ medium_logado.id|default:'' }}";
+  const mediumNome = "{{ medium_logado.nome|default:user.nome|escapejs }}";
 
   function showToast(msg, color='#198754') {
     toast.textContent = msg;
     toast.style.backgroundColor = color;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 1800);
+    setTimeout(() => toast.classList.remove('show'), 2000);
   }
 
-  function updateCardToOwned(card, nome) {
-    card.querySelector('.text-muted').innerHTML = `
-      <span>${nome}</span>
-      <button class="btn btn-link text-danger btn-desistir" 
-              data-funcao="${card.dataset.funcao}" 
-              title="Desistir" 
-              style="font-size:0.8rem; padding:0; margin-left:5px;">
-        <i class="bi bi-x-circle"></i>
-      </button>`;
+  function renderOwned(card) {
+    const meta = card.querySelector('.text-muted');
+    meta.innerHTML = `<span>${mediumNome}</span>
+      <button class="btn btn-link text-danger btn-desistir" data-funcao="${card.dataset.funcao}"
+        title="Desistir" style="font-size:0.8rem;padding:0;margin-left:5px;">
+        <i class="bi bi-x-circle"></i></button>`;
     card.dataset.pessoa = mediumId;
   }
 
-  function updateCardToVacant(card) {
-    card.querySelector('.text-muted').innerHTML = `
-      <button class="btn btn-sm btn-success btn-assumir" 
-              data-funcao="${card.dataset.funcao}" 
-              style="font-size:0.8rem;">Assumir</button>`;
+  function renderVacant(card) {
+    const meta = card.querySelector('.text-muted');
+    meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${card.dataset.funcao}" style="font-size:0.8rem;">Assumir</button>`;
     card.dataset.pessoa = '';
   }
 
-  // Mostrar botão de desistir se o médium logado for o dono
+  // Mostrar botão desistir se for do médium logado
   document.querySelectorAll('[data-pessoa]').forEach(card => {
     if (card.dataset.pessoa === mediumId) {
       const span = card.querySelector('.text-muted span');
-      if (span) {
-        span.insertAdjacentHTML('beforeend', `
-          <button class="btn btn-link text-danger btn-desistir"
-                  data-funcao="${card.dataset.funcao}"
-                  title="Desistir"
-                  style="font-size:0.8rem; padding:0; margin-left:5px;">
-            <i class="bi bi-x-circle"></i>
-          </button>`);
+      if (span && !span.querySelector('.btn-desistir')) {
+        span.insertAdjacentHTML('beforeend',
+          `<button class="btn btn-link text-danger btn-desistir" data-funcao="${card.dataset.funcao}"
+           title="Desistir" style="font-size:0.8rem;padding:0;margin-left:5px;">
+           <i class="bi bi-x-circle"></i></button>`);
       }
     }
   });
 
-  // ASSUMIR função
+  // ASSUMIR
   document.addEventListener('click', e => {
     const btn = e.target.closest('.btn-assumir');
     if (!btn) return;
-
-    const funcaoId = btn.dataset.funcao;
-    const card = document.getElementById(`card-${funcaoId}`);
-    updateCardToOwned(card, "{{ medium_logado.nome|default:user.nome|escapejs }}");
-    showToast('Função assumida!', '#198754');
-
+    const card = document.getElementById(`card-${btn.dataset.funcao}`);
+    renderOwned(card);
+    showToast('Função assumida!');
     fetch("{% url 'gira:assumir_funcao' %}", {
       method: 'POST',
-      headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({funcao_id: funcaoId})
-    })
-    .then(r => r.json())
-    .then(d => { if (d.status !== 'ok') updateCardToVacant(card); })
-    .catch(() => updateCardToVacant(card));
+      headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({funcao_id: btn.dataset.funcao})
+    }).then(r=>r.json()).then(d=>{
+      if(d.status!=='ok') renderVacant(card);
+    }).catch(()=>renderVacant(card));
   });
 
-  // DESISTIR função
+  // DESISTIR
   document.addEventListener('click', e => {
     const btn = e.target.closest('.btn-desistir');
     if (!btn) return;
-
-    const funcaoId = btn.dataset.funcao;
-    const card = document.getElementById(`card-${funcaoId}`);
-    updateCardToVacant(card);
-    showToast('Função liberada', '#ffc107');
-
+    const card = document.getElementById(`card-${btn.dataset.funcao}`);
+    renderVacant(card);
+    showToast('Função liberada','#ffc107');
     fetch("{% url 'gira:desistir_funcao' %}", {
-      method: 'POST',
-      headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({funcao_id: funcaoId})
-    })
-    .then(r => r.json())
-    .then(d => { if (d.status !== 'ok') updateCardToOwned(card, "{{ medium_logado.nome|default:user.nome|escapejs }}"); })
-    .catch(() => updateCardToOwned(card, "{{ medium_logado.nome|default:user.nome|escapejs }}"));
+      method:'POST',
+      headers:{'X-CSRFToken':csrftoken,'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({funcao_id:btn.dataset.funcao})
+    }).then(r=>r.json()).then(d=>{
+      if(d.status!=='ok') renderOwned(card);
+    }).catch(()=>renderOwned(card));
   });
 });
 </script>
