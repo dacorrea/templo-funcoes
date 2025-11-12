@@ -31,7 +31,9 @@
       <div>
         {% if user %}
           <span class="me-2">Olá, {{ user.nome }}</span>
-          <a href="{% url 'gira:logout' %}" class="btn btn-sm btn-outline-secondary">Sair</a>
+          
+          <a href="{% url 'gira:logout' %}" class="btn btn-sm btn-outline-light logout-btn">Sair</a>
+  
         {% endif %}
       </div>
     </div>
