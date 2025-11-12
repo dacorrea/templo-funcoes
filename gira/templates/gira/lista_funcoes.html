@@ -191,15 +191,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderOwned(card) {
-    const meta = card.querySelector('.text-muted');
-    if (!meta) return;
-    console.debug("[renderOwned] Atualizando card", card.dataset.funcao, "para médium", mediumId);
-    meta.innerHTML = `<span class="nome-medium" data-medium-id="${mediumId}">${mediumNome}</span>
-      <button class="btn btn-link text-danger btn-desistir" data-funcao="${card.dataset.funcao}"
-        title="Desistir" style="font-size:0.8rem;padding:0;margin-left:5px;">
-        <i class="bi bi-x-circle"></i></button>`;
-    card.dataset.pessoa = mediumId;
-  }
+  const meta = card.querySelector('.text-muted');
+  if (!meta) return;
+  console.debug("[renderOwned] Atualizando card", card.dataset.funcao, "para médium", mediumId);
+
+  meta.innerHTML = `
+    <div class="d-flex align-items-center justify-content-start">
+      <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
+      <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
+              data-funcao="${card.dataset.funcao}"
+              title="Desistir"
+              style="font-size:0.9rem; line-height:1;">
+        <i class="bi bi-x-circle"></i>
+      </button>
+    </div>`;
+  
+  card.dataset.pessoa = mediumId;
+}
 
   function renderVacant(card) {
     const meta = card.querySelector('.text-muted');
@@ -211,16 +219,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Inicial: mostra botão “Desistir” nos cards já assumidos
   document.querySelectorAll('.nome-medium').forEach(span => {
-    const mid = span.dataset.mediumId || '';
-    if (mid && mid.toString() === mediumId.toString()) {
-      console.debug("[INIT] Card pertencente ao médium logado encontrado:", span.closest('[data-funcao]')?.dataset.funcao);
-      if (!span.parentElement.querySelector('.btn-desistir')) {
-        span.insertAdjacentHTML('beforeend',
-          `<button class="btn btn-link text-danger btn-desistir" data-funcao="${span.closest('[data-funcao]')?.dataset.funcao || ''}"
-           title="Desistir" style="font-size:0.8rem;padding:0;margin-left:5px;"><i class="bi bi-x-circle"></i></button>`);
-      }
+  const mid = span.dataset.mediumId || '';
+  const card = span.closest('[data-funcao]');
+  if (mid && card && mid.toString() === mediumId.toString()) {
+    console.debug("[INIT] Card pertencente ao médium logado encontrado:", card.dataset.funcao);
+    if (!card.querySelector('.btn-desistir')) {
+      span.insertAdjacentHTML('afterend', `
+        <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
+                data-funcao="${card.dataset.funcao}"
+                title="Desistir"
+                style="font-size:0.9rem; line-height:1;">
+          <i class="bi bi-x-circle"></i>
+        </button>`);
     }
-  });
+  }
+});
 
   // ASSUMIR
   document.addEventListener('click', e => {
