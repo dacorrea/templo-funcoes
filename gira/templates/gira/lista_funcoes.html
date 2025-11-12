@@ -195,11 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
     card.dataset.pessoa = '';
   }
 
-  // Mostrar botão desistir se for do médium logado
+  // Exibe botão desistir automaticamente se card pertencer ao médium logado
   document.querySelectorAll('[data-pessoa]').forEach(card => {
     if (card.dataset.pessoa === mediumId) {
-      const span = card.querySelector('.text-muted span');
-      if (span && !span.querySelector('.btn-desistir')) {
+      const meta = card.querySelector('.text-muted');
+      const span = meta.querySelector('span');
+      if (span && !meta.querySelector('.btn-desistir')) {
         span.insertAdjacentHTML('beforeend',
           `<button class="btn btn-link text-danger btn-desistir" data-funcao="${card.dataset.funcao}"
            title="Desistir" style="font-size:0.8rem;padding:0;margin-left:5px;">
