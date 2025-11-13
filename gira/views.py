@@ -379,9 +379,13 @@ def get_gira_data(request, gira_id):
     if not gira:
         return JsonResponse({'erro': 'Gira não encontrada'}, status=404)
 
-    funcoes = list(GiraFuncaoHistorico.objects.filter(gira_id=gira_id).values())
+    funcoes = list(
+        GiraFuncaoHistorico.objects.filter(gira_id=gira_id)
+        .values('id', 'descricao', 'tipo', 'status', 'pessoa_id', 'pessoa__nome', 'chave')
+    )
     return JsonResponse({
         'gira': model_to_dict(gira, fields=['id', 'linha', 'data_hora']),
         'funcoes': funcoes
     })
+
 
