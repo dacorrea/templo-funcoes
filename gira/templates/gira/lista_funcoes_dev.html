@@ -1,7 +1,7 @@
 {% extends 'gira/base.html' %}
 
 <script>
-async function carregarGira(giraId) {
+window.carregarGira = async function(giraId) {
   try {
     const resposta = await fetch(`/funcoes_dev/data/${giraId}/`);
     const dados = await resposta.json();
