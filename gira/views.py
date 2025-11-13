@@ -250,28 +250,31 @@ def desistir_funcao(request):
 # 🔹 View da lista funções em desenvolvimento
 # -------------------------------------------------------------------
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required, user_passes_test
-from .models import Gira, Funcao, Medium, Historico, User
 from django.db.models import Q
+from .models import Gira, GiraFuncao, GiraMedium
+from .utils import _get_user  # ajuste o caminho conforme seu projeto
 
-# Permitir acesso apenas para superusers (ajuste se preferir outro critério)
-def is_superuser(user):
-    return user.is_superuser
-
-@login_required
-@user_passes_test(is_superuser)
 def lista_funcoes_dev(request, gira_id=None):
     """
     Página de desenvolvimento /funcoes_dev/
-    - Usa os mesmos dados atuais (gira_funcao, gira, medium).
-    - Protegida para superusers (ajuste se quiser outro acesso).
+    - Idêntica à lista_funcoes, mas restrita a superusers.
+    - Usa o mesmo login baseado em gira_user (não Django auth padrão).
     """
+
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
 
-    # 🔍 Vincula o usuário logado ao médium correspondente
-    medium_logado = Medium.objects.filter(user_id=user.id).first()
+    # 🔒 Permitir apenas usuários marcados como superuser
+    if not getattr(user, "is_superuser", False):
+        return render(request, "gira/acesso_negado.html", {"mensagem": "Acesso restrito."})
+
+    # 🔹 Mesmo comportamento da lista_funcoes
+    try:
+        # 🔍 Vincula o usuário logado ao médium correspondente
+        medium_logado = Medium.objects.filter(user_id=user.id).first()
+    except GiraMedium.DoesNotExist:
+        medium_logado = None
 
     # LOG de diagnóstico para monitoramento
     print(f"[DEBUG] Usuário logado: {user.nome} (gira_user.id={user.id})")
