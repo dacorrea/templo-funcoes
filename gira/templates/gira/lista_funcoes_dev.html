@@ -240,6 +240,47 @@ body.loading #loading-overlay {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+  /* Loader centralizado e discreto */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+}
+
+.loading-spinner .spinner-border {
+  color: #0072bb;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+/* Fade geral */
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Fade específico dos blocos */
+.fade-block {
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+.fade-block-out {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.fade-block-in {
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
 
 </style>
 
