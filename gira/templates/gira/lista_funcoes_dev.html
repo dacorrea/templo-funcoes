@@ -354,22 +354,23 @@ document.addEventListener('DOMContentLoaded', () => {
     console.debug('[carregarGira] dados recebidos:', dados);
 
     // ================================
-    // atualiza data e linha imediatamente
+    // Atualiza data e linha imediatamente
     // ================================
     const dataEl = document.querySelector('#gira-data');
     const linhaEl = document.querySelector('#gira-linha');
+    const novaLinha = dados.gira?.linha ?? '';
     if (dataEl && dados.gira?.data_hora) {
       dataEl.innerText = new Date(dados.gira.data_hora)
         .toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     }
-    if (linhaEl && dados.gira?.linha) {
-      linhaEl.innerText = dados.gira.linha;
+    if (linhaEl) {
+      linhaEl.innerText = novaLinha;
     }
 
     // ================================
-    // update theme/colors dinamicamente
+    // Atualiza tema / cores imediatamente
     // ================================
-    const isExu = dados.gira && /exu/i.test(dados.gira.linha || '');
+    const isExu = /exu/i.test(novaLinha);
     if (navbar) {
       navbar.style.background = isExu
         ? 'linear-gradient(to right, #000000, #4d0000, #990000)'
@@ -387,40 +388,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if (titleLimpeza) titleLimpeza.style.color = corAtiva;
 
     // ================================
-    // containers
+    // Containers
     // ================================
     const cambonesContainer = document.querySelector('#cambones-container');
     const orgContainer = document.querySelector('#organizacao-container');
     const limpezaContainer = document.querySelector('#limpeza-container');
 
     // ================================
-    // factory criar card
+    // Factory criar card
     // ================================
     function criarCard(f, blocoName) {
       const chave = f.chave ?? f.key ?? f.id ?? `id${Math.random().toString(36).slice(2, 8)}`;
       const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
       const status = (f.status || f.st || '').toString();
-      const descricao = f.descricao || f.tipo || '';
-      const pessoaId = (f.pessoa?.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
-      const pessoaNome = (f.pessoa?.nome) ? f.pessoa.nome : (f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '');
-      
-      // título do card
+      const pessoaId = f.pessoa?.id ?? f.pessoa_id ?? '';
+      const pessoaNome = f.pessoa?.nome ?? f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '';
+
       let cardTitle;
       if (blocoName === 'cambones') {
+        // Mostra o nome da função da linha se existir, senão fallback
         cardTitle = f.funcao_nome_linha || f.nome_linha || '—';
       } else if (blocoName === 'limpeza') {
         cardTitle = 'Limpeza';
       } else {
-        cardTitle = descricao || '—';
+        cardTitle = f.descricao || f.tipo || '—';
       }
+
+      const isVaga = status.toLowerCase().includes('vaga') || status.toLowerCase().includes('open') || status === '';
 
       const div = document.createElement('div');
       div.id = `card-${chave}`;
       div.dataset.funcao = chave;
       if (pessoaId) div.dataset.pessoa = pessoaId;
       div.className = 'col-6 col-md-4 col-lg-3';
-
-      const isVaga = status.toLowerCase().includes('vaga') || status.toLowerCase().includes('open') || status === '';
 
       div.innerHTML = `
         <div class="card border-0 shadow-sm h-100 position-relative">
@@ -440,10 +440,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================
-    // agrupar blocos
+    // Agrupar blocos
     // ================================
     let grouped = { cambones: [], organizacao: [], limpeza: [] };
-
     if (Array.isArray(dados.cambones) || Array.isArray(dados.organizacao) || Array.isArray(dados.limpeza)) {
       grouped.cambones = Array.isArray(dados.cambones) ? dados.cambones : [];
       grouped.organizacao = Array.isArray(dados.organizacao) ? dados.organizacao : [];
@@ -454,8 +453,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.includes('limpeza') || text.includes('limpo') || text.includes('faxina');
       }
       dados.funcoes.forEach(f => {
-        const tipo = (f.tipo || f.descricao || '').toString().toLowerCase();
-        const grupo = (f.grupo || '').toString().toLowerCase();
+        const tipo = (f.tipo || f.descricao || '').toLowerCase();
+        const grupo = (f.grupo || '').toLowerCase();
         if (grupo.includes('cambon') || tipo.includes('cambon') || tipo.includes('cambone') || tipo.includes('cambones')) {
           grouped.cambones.push(f);
         } else if (tipo.includes('limpeza') || descricaoIncluiLimpeza(f)) {
@@ -464,12 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
           grouped.organizacao.push(f);
         }
       });
-    } else {
-      if (cambonesContainer) cambonesContainer.innerHTML = '';
-      if (orgContainer) orgContainer.innerHTML = '';
-      if (limpezaContainer) limpezaContainer.innerHTML = '';
-      console.warn('carregarGira: formato de dados inesperado', dados);
-      return;
     }
 
     // ================================
@@ -480,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
       container.style.opacity = 0;
     });
 
-    // substitui conteúdo
     if (cambonesContainer) {
       cambonesContainer.innerHTML = '';
       grouped.cambones.forEach(f => cambonesContainer.appendChild(criarCard(f, 'cambones')));
@@ -501,9 +493,11 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Erro ao carregar gira:', err);
     showToast('Erro ao carregar gira', '#dc3545');
   } finally {
-    // remove spinner e faz fade-in do conteúdo
+    // garante que loader desapareça
     clearTimeout(spinnerTimer);
     loadingOverlay.style.display = 'none';
+
+    // fade-in conteúdo
     requestAnimationFrame(() => {
       mainContent.classList.remove('fade-out');
       mainContent.classList.add('fade-in');
