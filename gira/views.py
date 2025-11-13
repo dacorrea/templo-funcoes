@@ -374,6 +374,10 @@ from django.http import JsonResponse
 from .models import Gira, GiraFuncaoHistorico
 from django.forms.models import model_to_dict
 
+from django.http import JsonResponse
+from django.forms.models import model_to_dict
+from .models import Gira, GiraFuncaoHistorico
+
 def get_gira_data(request, gira_id):
     gira = Gira.objects.filter(id=gira_id).first()
     if not gira:
@@ -381,11 +385,46 @@ def get_gira_data(request, gira_id):
 
     funcoes = list(
         GiraFuncaoHistorico.objects.filter(gira_id=gira_id)
-        .values('id', 'descricao', 'tipo', 'status', 'pessoa_id', 'pessoa__nome', 'chave')
+        .select_related('medium_de_linha', 'pessoa')
+        .values(
+            'id',
+            'descricao',
+            'tipo',
+            'status',
+            'chave',
+            'pessoa_id',
+            'pessoa__nome',
+            'medium_de_linha_id',
+            'medium_de_linha__nome'
+        )
     )
+
+    # Renomeia os campos para ficar mais limpo no frontend
+    funcoes_formatadas = []
+    for f in funcoes:
+        funcoes_formatadas.append({
+            'id': f['id'],
+            'descricao': f['descricao'],
+            'tipo': f['tipo'],
+            'status': f['status'],
+            'chave': f['chave'],
+
+            # pessoa responsável (quando existir)
+            'pessoa_id': f['pessoa_id'],
+            'pessoa_nome': f['pessoa__nome'],
+
+            # médium de linha para Cambones
+            'medium_de_linha_id': f['medium_de_linha_id'],
+            'medium_de_linha': {
+                'id': f['medium_de_linha_id'],
+                'nome': f['medium_de_linha__nome']
+            } if f['medium_de_linha_id'] else None,
+        })
+
     return JsonResponse({
         'gira': model_to_dict(gira, fields=['id', 'linha', 'data_hora']),
-        'funcoes': funcoes
+        'funcoes': funcoes_formatadas
     })
+
 
 
