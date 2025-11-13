@@ -1,40 +1,5 @@
 {% extends 'gira/base.html' %}
 
-<script>
-window.carregarGira = async function(giraId) {
-  try {
-    const resposta = await fetch(`/funcoes_dev/data/${giraId}/`);
-    const dados = await resposta.json();
-
-    // Atualiza data e linha
-    document.querySelector('#gira-data').innerText =
-      new Date(dados.gira.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-    document.querySelector('#gira-linha').innerText = dados.gira.linha;
-
-    // Atualiza os cards
-    const container = document.querySelector('#funcoes-container');
-    container.innerHTML = ''; // limpa cards
-
-    dados.funcoes.forEach(f => {
-      const card = document.createElement('div');
-      card.className = 'col-md-3 mb-3';
-      card.innerHTML = `
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h6>${f.descricao || f.tipo}</h6>
-            <p class="mb-1"><small>${f.status}</small></p>
-          </div>
-        </div>`;
-      container.appendChild(card);
-    });
-
-  } catch (e) {
-    console.error('Erro ao carregar gira:', e);
-  }
-}
-</script>
-
-
 {% block content %}
 <div class="container my-0">
 
@@ -231,15 +196,52 @@ window.carregarGira = async function(giraId) {
 </style>
 
 <script>
+  // =========================
+  // Função AJAX global
+  // =========================
+  window.carregarGira = async function(giraId) {
+    try {
+      const resposta = await fetch(`/funcoes_dev/data/${giraId}/`);
+      const dados = await resposta.json();
+
+      // Atualiza data e linha
+      document.querySelector('#gira-data').innerText =
+        new Date(dados.gira.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      document.querySelector('#gira-linha').innerText = dados.gira.linha;
+
+      // Atualiza os cards
+      const container = document.querySelector('#funcoes-container');
+      container.innerHTML = ''; // limpa cards
+
+      dados.funcoes.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'col-md-3 mb-3';
+        card.innerHTML = `
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6>${f.descricao || f.tipo}</h6>
+              <p class="mb-1"><small>${f.status}</small></p>
+            </div>
+          </div>`;
+        container.appendChild(card);
+      });
+
+    } catch (e) {
+      console.error('Erro ao carregar gira:', e);
+    }
+  }
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', () => {
   const csrftoken = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop();
   const toast = document.getElementById('toast-funcao');
-
   const mediumId = "{{ medium_logado.id|default:'' }}";
   const mediumNome = "{{ medium_logado.nome|default:user.nome|escapejs }}";
 
-  console.debug("[INIT] medium_logado:", { id: mediumId, nome: mediumNome });
-
+  // =========================
+  // Funções de render de card
+  // =========================
   function showToast(msg, color='#198754') {
     toast.textContent = msg;
     toast.style.backgroundColor = color;
@@ -248,135 +250,97 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderOwned(card) {
-  const meta = card.querySelector('.text-muted');
-  if (!meta) return;
-  console.debug("[renderOwned] Atualizando card", card.dataset.funcao, "para médium", mediumId);
-
-  meta.innerHTML = `
-    <div class="d-flex align-items-center justify-content-start">
-      <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
-      <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
-              data-funcao="${card.dataset.funcao}"
-              title="Desistir"
-              style="font-size:0.9rem; line-height:1;">
-        <i class="bi bi-x-circle"></i>
-      </button>
-    </div>`;
-  
-  card.dataset.pessoa = mediumId;
-}
-
-  function renderVacant(card) {
     const meta = card.querySelector('.text-muted');
     if (!meta) return;
-    console.debug("[renderVacant] Liberando card", card.dataset.funcao);
-    meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${card.dataset.funcao}" style="font-size:0.8rem;">Assumir</button>`;
-    card.dataset.pessoa = '';
-  }
-
-  // Inicial: mostra botão “Desistir” nos cards já assumidos
-  document.querySelectorAll('.nome-medium').forEach(span => {
-  const mid = span.dataset.mediumId || '';
-  const card = span.closest('[data-funcao]');
-  if (mid && card && mid.toString() === mediumId.toString()) {
-    console.debug("[INIT] Card pertencente ao médium logado encontrado:", card.dataset.funcao);
-    if (!card.querySelector('.btn-desistir')) {
-      span.insertAdjacentHTML('afterend', `
+    meta.innerHTML = `
+      <div class="d-flex align-items-center justify-content-start">
+        <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
         <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
                 data-funcao="${card.dataset.funcao}"
                 title="Desistir"
                 style="font-size:0.9rem; line-height:1;">
           <i class="bi bi-x-circle"></i>
-        </button>`);
-    }
+        </button>
+      </div>`;
+    card.dataset.pessoa = mediumId;
   }
-});
 
-  // ASSUMIR
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('.btn-assumir');
-    if (!btn) return;
-    const funcaoId = btn.dataset.funcao;
-    const card = document.getElementById(`card-${funcaoId}`);
-    if (!card) return;
+  function renderVacant(card) {
+    const meta = card.querySelector('.text-muted');
+    if (!meta) return;
+    meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${card.dataset.funcao}" style="font-size:0.8rem;">Assumir</button>`;
+    card.dataset.pessoa = '';
+  }
 
-    console.debug("[CLICK] Assumir função:", funcaoId, "→ médium:", mediumId);
-
-    renderOwned(card);
-    showToast('Assumindo função...', '#0d6efd');
-
-    fetch("{% url 'gira:assumir_funcao' %}", {
-      method: 'POST',
-      headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({ funcao_chave: funcaoId })
-    })
-    .then(r => r.json())
-    .then(d => {
-      console.debug("[RESPONSE] Assumir:", d);
-      if (d.status !== 'ok') {
-        renderVacant(card);
-        showToast(d.mensagem || 'Erro ao assumir', '#dc3545');
-      } else {
-        showToast(d.mensagem || 'Função assumida', '#198754');
+  // Inicializa cards assumidos
+  document.querySelectorAll('.nome-medium').forEach(span => {
+    const mid = span.dataset.mediumId || '';
+    const card = span.closest('[data-funcao]');
+    if (mid && card && mid.toString() === mediumId.toString()) {
+      if (!card.querySelector('.btn-desistir')) {
+        span.insertAdjacentHTML('afterend', `
+          <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
+                  data-funcao="${card.dataset.funcao}"
+                  title="Desistir"
+                  style="font-size:0.9rem; line-height:1;">
+            <i class="bi bi-x-circle"></i>
+          </button>`);
       }
-    })
-    .catch(err => {
-      console.debug("[ERROR] Assumir:", err);
-      renderVacant(card);
-      showToast('Erro de rede ao assumir', '#dc3545');
-    });
+    }
   });
 
-  // DESISTIR
+  // =========================
+  // Eventos ASSUMIR / DESISTIR
+  // =========================
   document.addEventListener('click', e => {
-    const btn = e.target.closest('.btn-desistir');
-    if (!btn) return;
-    const funcaoId = btn.dataset.funcao;
-    const card = document.getElementById(`card-${funcaoId}`);
-    if (!card) return;
+    const btnAssumir = e.target.closest('.btn-assumir');
+    const btnDesistir = e.target.closest('.btn-desistir');
 
-    console.debug("[CLICK] Desistir função:", funcaoId, "→ médium:", mediumId);
-
-    renderVacant(card);
-    showToast('Desistindo da função...', '#ffc107');
-
-    fetch("{% url 'gira:desistir_funcao' %}", {
-      method: 'POST',
-      headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({funcao_id: funcaoId})
-    })
-    .then(r => r.json())
-    .then(d => {
-      console.debug("[RESPONSE] Desistir:", d);
-      if (d.status !== 'ok') {
-        renderOwned(card);
-        showToast(d.mensagem || 'Erro ao desistir', '#dc3545');
-      } else {
-        showToast(d.mensagem || 'Função liberada', '#0dcaf0');
-      }
-    })
-    .catch(err => {
-      console.debug("[ERROR] Desistir:", err);
+    if (btnAssumir) {
+      const funcaoId = btnAssumir.dataset.funcao;
+      const card = document.getElementById(`card-${funcaoId}`);
       renderOwned(card);
-      showToast('Erro de rede ao desistir', '#dc3545');
-    });
+      showToast('Assumindo função...', '#0d6efd');
+      fetch("{% url 'gira:assumir_funcao' %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({ funcao_chave: funcaoId })
+      }).then(r => r.json())
+        .then(d => {
+          if (d.status !== 'ok') renderVacant(card);
+          showToast(d.mensagem || (d.status==='ok' ? 'Função assumida' : 'Erro ao assumir'), d.status==='ok' ? '#198754' : '#dc3545');
+        })
+        .catch(() => { renderVacant(card); showToast('Erro de rede ao assumir', '#dc3545'); });
+    }
+
+    if (btnDesistir) {
+      const funcaoId = btnDesistir.dataset.funcao;
+      const card = document.getElementById(`card-${funcaoId}`);
+      renderVacant(card);
+      showToast('Desistindo da função...', '#ffc107');
+      fetch("{% url 'gira:desistir_funcao' %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({ funcao_id: funcaoId })
+      }).then(r => r.json())
+        .then(d => {
+          if (d.status !== 'ok') renderOwned(card);
+          showToast(d.mensagem || (d.status==='ok' ? 'Função liberada' : 'Erro ao desistir'), d.status==='ok' ? '#0dcaf0' : '#dc3545');
+        })
+        .catch(() => { renderOwned(card); showToast('Erro de rede ao desistir', '#dc3545'); });
+    }
   });
 
-});
-
-// --- CONTROLE DO CARROSSEL DE GIRAS ---
-document.addEventListener('DOMContentLoaded', () => {
+  // =========================
+  // CARROSSEL DE GIRAS
+  // =========================
   const prevBtn = document.getElementById('prevGira');
   const nextBtn = document.getElementById('nextGira');
   const giraIdAtual = "{{ gira.id }}";
-  const tema = "{{ tema }}";
-
-  // Lista de giras (gerado no backend)
   const giras = {{ giras_json|safe }};
   let index = giras.findIndex(g => g.id === parseInt(giraIdAtual));
 
-  // Cores do tema
-  const corAtiva = tema === 'exu' ? '#b00000' : '#0072bb';
+  const corAtiva = "{{ tema }}" === 'exu' ? '#b00000' : '#0072bb';
   const corInativa = '#cccccc';
 
   function atualizarBotoes() {
@@ -389,9 +353,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function navegar(offset) {
     const novo = index + offset;
     if (novo >= 0 && novo < giras.length) {
-      index = novo; // atualiza índice
-      const giraDestino = giras[index];
-      window.carregarGira(giraDestino.id); // chama AJAX
+      index = novo;
+      window.carregarGira(giras[index].id);
       atualizarBotoes();
     }
   }
@@ -402,22 +365,19 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizarBotoes();
   }
 
-  // Swipe (mobile)
+  // Swipe mobile
   let touchStartX = 0;
-  let touchEndX = 0;
   document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
   document.addEventListener('touchend', e => {
-    touchEndX = e.changedTouches[0].screenX;
-    const diff = touchEndX - touchStartX;
-    if (Math.abs(diff) > 60) {
-      if (diff > 0) navegar(-1);
-      else navegar(1);
+    const touchEndX = e.changedTouches[0].screenX;
+    if (Math.abs(touchEndX - touchStartX) > 60) {
+      navegar(touchEndX - touchStartX > 0 ? -1 : 1);
     }
   });
+
 });
-
-
-
 </script>
 
 {% endblock %}
+
+
