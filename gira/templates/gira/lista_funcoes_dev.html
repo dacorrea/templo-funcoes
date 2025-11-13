@@ -204,49 +204,125 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================
   // AJAX para carregar gira
   // =========================
-  window.carregarGira = async function(giraId) {
-    try {
-      const resposta = await fetch(`/funcoes_dev/data/${giraId}/`);
-      const dados = await resposta.json();
+  // substituir a implementação existente por esta
+window.carregarGira = async function (giraId) {
+  try {
+    const resp = await fetch(`/funcoes_dev/data/${giraId}/`);
+    const dados = await resp.json();
 
-      // Atualiza data e linha
-      const dataEl = document.querySelector('#gira-data');
-      const linhaEl = document.querySelector('#gira-linha');
-      if (dataEl) dataEl.innerText = new Date(dados.gira.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-      if (linhaEl) linhaEl.innerText = dados.gira.linha;
+    // atualiza data e linha (só se existirem os elementos)
+    const dataEl = document.querySelector('#gira-data');
+    const linhaEl = document.querySelector('#gira-linha');
+    if (dataEl && dados.gira && dados.gira.data_hora) {
+      dataEl.innerText = new Date(dados.gira.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    }
+    if (linhaEl && dados.gira && dados.gira.linha) {
+      linhaEl.innerText = dados.gira.linha;
+    }
 
-      // Atualiza cada bloco
-      ['cambones', 'organizacao', 'limpeza'].forEach(bloco => {
-        const container = document.querySelector(`#${bloco}-container`);
-        if (!container) return;
-        container.innerHTML = '';
-        dados[bloco].forEach(f => {
-          const card = document.createElement('div');
-          card.id = `card-${f.chave}`;
-          card.dataset.funcao = f.chave;
-          card.dataset.pessoa = f.pessoa?.id || '';
-          card.className = 'col-6 col-md-4 col-lg-3';
-          card.innerHTML = `
-            <div class="card border-0 shadow-sm h-100 position-relative">
-              <div class="card-body p-3 text-start">
-                <div class="fw-semibold text-dark" style="font-size:0.95rem;">
-                  ${f.descricao || f.tipo || (bloco === 'limpeza' ? 'Limpeza' : '—')}
-                </div>
-                <div class="text-muted" style="font-size:0.85rem;">
-                  ${f.status.toLowerCase() === 'vaga'
-                    ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${f.id}" style="font-size:0.8rem;">Assumir</button>`
-                    : `<span class="nome-medium" data-medium-id="${f.pessoa?.id || ''}">${f.pessoa?.nome || '—'}</span>`}
-                </div>
-              </div>
-            </div>`;
-          container.appendChild(card);
-        });
+    // garante containers existirem
+    const cambonesContainer = document.querySelector('#cambones-container');
+    const orgContainer = document.querySelector('#organizacao-container');
+    const limpezaContainer = document.querySelector('#limpeza-container');
+
+    // função utilitária para criar um card DOM compatível com seu template
+    function criarCard(f, blocoName) {
+      // tenta extrair chave, id, status e pessoa a partir de possíveis campos
+      const chave = f.chave ?? f.key ?? f.id ?? `id${Math.random().toString(36).slice(2,8)}`;
+      const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
+      const status = (f.status || f.st || '').toString();
+      const descricao = f.descricao || f.tipo || '';
+      // pessoa pode vir como objeto ou apenas id (values() usualmente retorna pessoa_id)
+      const pessoaId = (f.pessoa && f.pessoa.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
+      const pessoaNome = (f.pessoa && f.pessoa.nome) ? f.pessoa.nome : (f.pessoa_nome ?? f.pessoa_nome_display ?? '');
+
+      const div = document.createElement('div');
+      div.id = `card-${chave}`;
+      div.dataset.funcao = chave;
+      if (pessoaId) div.dataset.pessoa = pessoaId;
+      div.className = 'col-6 col-md-4 col-lg-3';
+
+      // marca "Vago" se status indicar vaga
+      const isVaga = status.toLowerCase().includes('vaga') || status.toLowerCase().includes('open') || status === '';
+
+      div.innerHTML = `
+        <div class="card border-0 shadow-sm h-100 position-relative">
+          ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>` : ''}
+          <div class="card-body p-3 text-start">
+            <div class="fw-semibold text-dark" style="font-size:0.95rem;">
+              ${descricao || (blocoName === 'limpeza' ? 'Limpeza' : '—')}
+            </div>
+            <div class="text-muted" style="font-size:0.85rem;">
+              ${isVaga
+                ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`
+                : `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`}
+            </div>
+          </div>
+        </div>`;
+
+      return div;
+    }
+
+    // se o backend já devolve os blocos separados, usa-os; senão agrupa a lista plana
+    let grouped = { cambones: [], organizacao: [], limpeza: [] };
+
+    if (Array.isArray(dados.cambones) || Array.isArray(dados.organizacao) || Array.isArray(dados.limpeza)) {
+      // usa o que chegou (faz fallback para lista vazia)
+      grouped.cambones = Array.isArray(dados.cambones) ? dados.cambones : [];
+      grouped.organizacao = Array.isArray(dados.organizacao) ? dados.organizacao : [];
+      grouped.limpeza = Array.isArray(dados.limpeza) ? dados.limpeza : [];
+    } else if (Array.isArray(dados.funcoes)) {
+      // agrupa usando heurísticas: campo 'grupo', 'tipo' ou palavras-chave
+      dados.funcoes.forEach(f => {
+        const tipo = (f.tipo || f.descricao || '').toString().toLowerCase();
+        const grupo = (f.grupo || '').toString().toLowerCase();
+
+        // regras simples (ajuste as palavras-chave conforme seus dados reais)
+        if (grupo.includes('cambon') || tipo.includes('cambon') || tipo.includes('cambone') || tipo.includes('cambones')) {
+          grouped.cambones.push(f);
+        } else if (tipo.includes('limpeza') || descricaoIncludesLimpeza(f)) {
+          grouped.limpeza.push(f);
+        } else {
+          // tudo que não for limpeza ou cambones vai para organização
+          grouped.organizacao.push(f);
+        }
       });
 
-    } catch (e) {
-      console.error('Erro ao carregar gira:', e);
+      // helper para detectar limpeza em outros campos
+      function descricaoIncludesLimpeza(f) {
+        const text = ((f.descricao || f.tipo || f.nome || '') + '').toLowerCase();
+        return text.includes('limpeza') || text.includes('limpo') || text.includes('faxina');
+      }
+    } else {
+      // formato inesperado: limpa containers e termina
+      if (cambonesContainer) cambonesContainer.innerHTML = '';
+      if (orgContainer) orgContainer.innerHTML = '';
+      if (limpezaContainer) limpezaContainer.innerHTML = '';
+      console.warn('carregarGira: formato de dados inesperado', dados);
+      return;
     }
+
+    // substitui conteúdo dos containers (apaga e reconstrói)
+    if (cambonesContainer) {
+      cambonesContainer.innerHTML = '';
+      grouped.cambones.forEach(f => cambonesContainer.appendChild(criarCard(f, 'cambones')));
+    }
+    if (orgContainer) {
+      orgContainer.innerHTML = '';
+      grouped.organizacao.forEach(f => orgContainer.appendChild(criarCard(f, 'organizacao')));
+    }
+    if (limpezaContainer) {
+      limpezaContainer.innerHTML = '';
+      grouped.limpeza.forEach(f => limpezaContainer.appendChild(criarCard(f, 'limpeza')));
+    }
+
+    // OBS: seus listeners de assumir/desistir usam delegação no document, então
+    // os botões recém-criados já funcionarão sem re-bind.
+  } catch (err) {
+    console.error('Erro ao carregar gira:', err);
   }
+}
+
 
   // =========================
   // Eventos ASSUMIR / DESISTIR
