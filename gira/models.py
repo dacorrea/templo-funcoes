@@ -131,3 +131,24 @@ class Historico(models.Model):
 
     def __str__(self):
         return f"{self.data:%d/%m/%Y %H:%M} - {self.acao}"
+
+from django.db import models
+
+class GiraFuncaoHistorico(models.Model):
+    gira = models.ForeignKey('Gira', on_delete=models.CASCADE)
+    descricao = models.CharField(max_length=255, blank=True, null=True)
+    tipo = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=50, blank=True, null=True)
+    pessoa = models.ForeignKey('Medium', on_delete=models.SET_NULL, null=True, related_name='funcoes_historico')
+    medium_de_linha = models.ForeignKey('Medium', on_delete=models.SET_NULL, null=True, related_name='linha_historico')
+    posicao = models.CharField(max_length=50, blank=True, null=True)
+    chave = models.CharField(max_length=100, blank=True, null=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'gira_funcao_historico'
+        ordering = ['gira_id', 'posicao']
+
+    def __str__(self):
+        return f"{self.descricao or self.tipo} ({self.gira_id})"
+
