@@ -354,15 +354,15 @@ def lista_funcoes_dev(request, gira_id=None):
     giras = list(Gira.objects.all().order_by('data_hora').values('id', 'data_hora', 'linha'))
     giras_json = json.dumps(giras, cls=DjangoJSONEncoder)
 
-contexto = {
-    'user': user,
-    'sess_user_id': user.id,
-    'medium_logado': medium_logado,
-    'gira': gira,
-    'cambones': cambones,
-    'organizacao': organizacao_ordered,
-    'limpeza': limpeza,
-    'tema': tema,
-    'giras_json': giras_json,
-}
-return render(request, 'gira/lista_funcoes_dev.html', contexto)
+    contexto = {
+        'user': user,
+        'sess_user_id': user.id,
+        'medium_logado': medium_logado,
+        'gira': gira,
+        'cambones': cambones,
+        'organizacao': organizacao_ordered,
+        'limpeza': limpeza,
+        'tema': tema,
+        'giras_json': giras_json,
+    }
+    return render(request, 'gira/lista_funcoes_dev.html', contexto)
