@@ -180,7 +180,6 @@ def lista_funcoes(request):
 # -------------------------------------------------------------------
 # 🔹 Endpoints AJAX: assumir / desistir função
 # -------------------------------------------------------------------
-
 @require_POST
 @csrf_exempt
 def assumir_funcao(request):
@@ -189,17 +188,24 @@ def assumir_funcao(request):
         return JsonResponse({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}, status=401)
 
     funcao_id = request.POST.get('funcao_id')
-    if not funcao_id:
-        return JsonResponse({'status': 'erro', 'mensagem': 'ID da função ausente.'}, status=400)
+    funcao_chave = request.POST.get('funcao_chave')  # <- novo campo opcional
+
+    if not funcao_id and not funcao_chave:
+        return JsonResponse({'status': 'erro', 'mensagem': 'ID ou chave da função ausente.'}, status=400)
 
     try:
         medium = Medium.objects.get(user_id=sess_user_id)
     except Medium.DoesNotExist:
         return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado para o usuário.'}, status=404)
 
-    try:
-        funcao = Funcao.objects.get(id=funcao_id)
-    except Funcao.DoesNotExist:
+    # 🔹 Busca a função: tenta primeiro por ID, depois por CHAVE
+    funcao = None
+    if funcao_id and str(funcao_id).isdigit():
+        funcao = Funcao.objects.filter(id=funcao_id).first()
+    if not funcao and funcao_chave:
+        funcao = Funcao.objects.filter(chave=funcao_chave).first()
+
+    if not funcao:
         return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'}, status=404)
 
     if funcao.pessoa_id:
@@ -223,17 +229,24 @@ def desistir_funcao(request):
         return JsonResponse({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}, status=401)
 
     funcao_id = request.POST.get('funcao_id')
-    if not funcao_id:
-        return JsonResponse({'status': 'erro', 'mensagem': 'ID da função ausente.'}, status=400)
+    funcao_chave = request.POST.get('funcao_chave')  # <- novo campo opcional
+
+    if not funcao_id and not funcao_chave:
+        return JsonResponse({'status': 'erro', 'mensagem': 'ID ou chave da função ausente.'}, status=400)
 
     try:
         medium = Medium.objects.get(user_id=sess_user_id)
     except Medium.DoesNotExist:
         return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado para o usuário.'}, status=404)
 
-    try:
-        funcao = Funcao.objects.get(id=funcao_id)
-    except Funcao.DoesNotExist:
+    # 🔹 Busca a função: tenta primeiro por ID, depois por CHAVE
+    funcao = None
+    if funcao_id and str(funcao_id).isdigit():
+        funcao = Funcao.objects.filter(id=funcao_id).first()
+    if not funcao and funcao_chave:
+        funcao = Funcao.objects.filter(chave=funcao_chave).first()
+
+    if not funcao:
         return JsonResponse({'status': 'erro', 'mensagem': 'Função inexistente.'}, status=404)
 
     if funcao.pessoa_id != medium.id:
@@ -244,6 +257,7 @@ def desistir_funcao(request):
     funcao.save()
 
     return JsonResponse({'status': 'ok', 'mensagem': f'{medium.nome} desistiu da função.', 'funcao_id': funcao.id})
+
 
 
 # -------------------------------------------------------------------
@@ -350,4 +364,4 @@ def lista_funcoes_dev(request, gira_id=None):
         'gira_anterior': gira_anterior,
         'gira_proxima': gira_proxima,
     }
-    return render(request, 'gira/lista_funcoes_dev.html', contexto)
+    return render(request, 'gira/lista_funcao_dev.html', contexto)
