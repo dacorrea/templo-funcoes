@@ -256,44 +256,36 @@ from .models import Gira, Funcao, Medium, Historico, User
 def lista_funcoes_dev(request, gira_id=None):
     """
     Página de desenvolvimento /funcoes_dev/
-    - Idêntica à lista_funcoes, mas restrita a superusers.
-    - Usa o mesmo login baseado em gira_user (não Django auth padrão).
+    - Idêntica à lista_funcoes, mas usa gira_funcao_historico.
+    - Acesso restrito a superusers.
     """
 
     user = _get_user(request)
     if not user:
         return redirect('gira:login')
 
-    # 🔒 Permitir apenas usuários marcados como superuser
     if not getattr(user, "is_superuser", False):
         return render(request, "gira/acesso_negado.html", {"mensagem": "Acesso restrito."})
 
-    # 🔹 Mesmo comportamento da lista_funcoes
+    # 🔍 Obtém médium vinculado
     try:
-        # 🔍 Vincula o usuário logado ao médium correspondente
         medium_logado = Medium.objects.filter(user_id=user.id).first()
-    except GiraMedium.DoesNotExist:
+    except Medium.DoesNotExist:
         medium_logado = None
 
-    # LOG de diagnóstico para monitoramento
-    print(f"[DEBUG] Usuário logado: {user.nome} (gira_user.id={user.id})")
-    if medium_logado:
-        print(f"[DEBUG] Médium logado: {medium_logado.nome} (gira_medium.id={medium_logado.id})")
-    else:
-        print("[DEBUG] Nenhum médium associado a este usuário!")
-
-    gira = Gira.objects.order_by('-data_hora').first()
+    gira = Gira.objects.order_by('-data_hora').first() if not gira_id else Gira.objects.filter(id=gira_id).first()
     if not gira:
         messages.info(request, 'Nenhuma gira cadastrada.')
         return render(request, 'gira/lista_funcoes.html', {'user': user})
 
+    # 🔹 Busca as funções do histórico
     funcoes = list(
-        gira.funcoes.select_related('medium_de_linha', 'pessoa').all().order_by('posicao')
+        GiraFuncaoHistorico.objects.filter(gira_id=gira.id)
+        .select_related('medium_de_linha', 'pessoa')
+        .order_by('posicao')
     )
 
     cambones, organizacao, limpeza = [], [], []
-
-    # Agrupamento das funções
     for f in funcoes:
         tipo = (f.tipo or '').lower()
         chave = (f.chave or '').lower()
@@ -308,17 +300,14 @@ def lista_funcoes_dev(request, gira_id=None):
         else:
             organizacao.append(f)
 
-    # Ordenação de Cambones (“Mãe Bruna” primeiro)
     def _cambone_key(item):
         nome = item.medium_de_linha.nome if item.medium_de_linha else ''
         n = _normalize(nome)
         if 'mae bruna' in n or ('mae' in n and 'bruna' in n):
             return ('', '')
         return (n, nome or '')
-
     cambones.sort(key=_cambone_key)
 
-    # Organização – ordem fixa
     ordem_fix = ['portao', 'distribuir senha', 'lojinha', 'chamar senha']
     buckets = {k: [] for k in ordem_fix}
     others = []
@@ -338,28 +327,27 @@ def lista_funcoes_dev(request, gira_id=None):
         organizacao_ordered.extend(buckets[key])
     organizacao_ordered.extend(others)
 
-    # Limpeza – padroniza descrição
     for f in limpeza:
         descr = (f.descricao or f.tipo or '')
         setattr(f, 'display_descricao', 'Limpeza' if 'limp' in descr.lower() else descr or f.tipo or 'Limpeza')
 
-    # Tema dinâmico
     linha = _normalize(gira.linha or '')
     tema = 'exu' if 'exu' in linha or 'pombag' in linha else 'padrao'
 
-    # Debug: quais funções têm pessoa_id igual ao médium logado
-    if medium_logado:
-        meus_ids = [f.id for f in funcoes if f.pessoa_id == medium_logado.id]
-        print(f"[DEBUG] Funções assumidas por {medium_logado.nome}: {meus_ids}")
+    # 🧭 Carrossel: gira anterior e próxima
+    gira_anterior = Gira.objects.filter(data_hora__lt=gira.data_hora).order_by('-data_hora').first()
+    gira_proxima = Gira.objects.filter(data_hora__gt=gira.data_hora).order_by('data_hora').first()
 
     contexto = {
         'user': user,
-        'sess_user_id': user.id,  # gira_user.id (mantém compatibilidade)
-        'medium_logado': medium_logado,  # gira_medium associado
+        'sess_user_id': user.id,
+        'medium_logado': medium_logado,
         'gira': gira,
         'cambones': cambones,
         'organizacao': organizacao_ordered,
         'limpeza': limpeza,
         'tema': tema,
+        'gira_anterior': gira_anterior,
+        'gira_proxima': gira_proxima,
     }
-    return render(request, 'gira/lista_funcoes.html', contexto)
+    return render(request, 'gira/lista_funcoes_dev.html', contexto)
