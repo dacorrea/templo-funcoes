@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
 import unicodedata
 
-from .models import Gira, Funcao, Medium, Historico, User
+
 
 
 # -------------------------------------------------------------------
@@ -251,7 +251,7 @@ def desistir_funcao(request):
 # -------------------------------------------------------------------
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
-from .models import Gira, Funcao, Medium, Historico, User
+from .models import Gira, Funcao, Medium, Historico, User, GiraFuncaoHistorico
 
 def lista_funcoes_dev(request, gira_id=None):
     """
