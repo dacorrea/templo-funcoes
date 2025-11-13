@@ -298,28 +298,44 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============
   let spinnerTimer = null;
 
-  window.carregarGira = async function (giraId) {
-    try {
-      // visual de transição imediata (fade); o spinner aparece só se fetch demorar
-      mainContent.classList.add('fade-out');
-      // prepara spinner aparecer só depois de 200ms (preferência do usuário)
-      spinnerTimer = setTimeout(() => {
-        loadingOverlay.style.display = 'block';
-      }, 200);
+  window.carregarGira = async function (giraId, giraPreview = null) {
+  try {
+    // visual de transição imediata (fade); spinner só se fetch demorar
+    mainContent.classList.add('fade-out');
+    spinnerTimer = setTimeout(() => {
+      loadingOverlay.style.display = 'flex';
+    }, 200);
 
-      const resp = await fetch(`/funcoes_dev/data/${giraId}/`);
-      const dados = await resp.json();
-      console.debug('[carregarGira] dados recebidos:', dados);
+    // Atualiza instantaneamente a data e linha se já tivermos o preview da próxima/anterior gira
+    const dataEl = document.querySelector('#gira-data');
+    const linhaEl = document.querySelector('#gira-linha');
+    if (giraPreview && dataEl && linhaEl) {
+      if (giraPreview.data_hora) {
+        dataEl.innerText = new Date(giraPreview.data_hora).toLocaleString('pt-BR', {
+          dateStyle: 'short',
+          timeStyle: 'short'
+        });
+      }
+      if (giraPreview.linha) {
+        linhaEl.innerText = giraPreview.linha;
+      }
+    }
 
-      // atualiza data e linha (só se existirem os elementos)
-      const dataEl = document.querySelector('#gira-data');
-      const linhaEl = document.querySelector('#gira-linha');
-      if (dataEl && dados.gira && dados.gira.data_hora) {
-        dataEl.innerText = new Date(dados.gira.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-      }
-      if (linhaEl && dados.gira && dados.gira.linha) {
-        linhaEl.innerText = dados.gira.linha;
-      }
+    // inicia o fetch real
+    const resp = await fetch(`/funcoes_dev/data/${giraId}/`);
+    const dados = await resp.json();
+    console.debug('[carregarGira] dados recebidos:', dados);
+
+    // atualiza data e linha reais (substitui o preview)
+    if (dataEl && dados.gira?.data_hora) {
+      dataEl.innerText = new Date(dados.gira.data_hora).toLocaleString('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+      });
+    }
+    if (linhaEl && dados.gira?.linha) {
+      linhaEl.innerText = dados.gira.linha;
+    }
 
       // ===== update theme/colors dynamically =====
       // detecta se a linha indica 'exu' (ajuste regex conforme sua nomenclatura)
@@ -512,15 +528,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function navegar(offset) {
-    const novo = index + offset;
-    if (novo >= 0 && novo < giras.length) {
-      index = novo;
-      const destinoId = giras[index].id;
-      // chamada AJAX que mostra feedback visual
-      window.carregarGira(destinoId);
-      atualizarBotoes();
+  const novo = index + offset;
+  if (novo >= 0 && novo < giras.length) {
+    index = novo;
+
+    // Mostra imediatamente data e linha da próxima gira
+    const proxima = giras[index];
+    const dataEl = document.querySelector('#gira-data');
+    const linhaEl = document.querySelector('#gira-linha');
+    if (dataEl && proxima.data_hora) {
+      dataEl.innerText = new Date(proxima.data_hora)
+        .toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     }
+    if (linhaEl && proxima.linha) {
+      linhaEl.innerText = proxima.linha;
+    }
+
+    // Mostra loader enquanto carrega detalhes
+    document.body.classList.add('loading');
+
+    // Carrega dados completos
+    window.carregarGira(proxima.id);
+    atualizarBotoes();
   }
+}
 
   if (prevBtn && nextBtn) {
     prevBtn.addEventListener('click', () => navegar(-1));
