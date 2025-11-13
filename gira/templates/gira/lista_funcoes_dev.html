@@ -4,37 +4,50 @@
 <div class="container my-4">
 
   {% if gira %}
-<div class="d-flex align-items-center justify-content-between mb-4 position-relative">
-  <!-- Botão esquerda -->
-  <button id="prevGira" class="btn btn-outline-secondary btn-sm" 
-          style="border:none; background:none; color:#999;"
-          title="Gira anterior">
-    <i class="bi bi-chevron-left" style="font-size:1.5rem;"></i>
-  </button>
+  <div class="mb-4 text-start position-relative">
 
-  <div class="text-center flex-grow-1">
-    <p class="mb-1"
-       style="font-size: 0.95rem; font-weight: 500;
-              color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
-      {{ gira.data_hora|date:"d/m/Y H:i" }}
-    </p>
-    <h2 class="mb-0"
+    <!-- Linha da data e setas -->
+    <div class="d-flex align-items-center justify-content-between mb-1">
+      <button id="prevGira"
+              class="btn btn-link p-0"
+              style="color:#ccc;"
+              title="Gira anterior">
+        <i class="bi bi-chevron-left" style="font-size:1.5rem;"></i>
+      </button>
+
+      <p class="mb-0 text-center flex-grow-1"
+         style="font-size: 0.95rem; font-weight: 500;
+                color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
+        {{ gira.data_hora|date:"d/m/Y H:i" }}
+      </p>
+
+      <button id="nextGira"
+              class="btn btn-link p-0"
+              style="color:#ccc;"
+              title="Próxima gira">
+        <i class="bi bi-chevron-right" style="font-size:1.5rem;"></i>
+      </button>
+    </div>
+
+    <!-- Linha do nome -->
+    <h2 class="mb-2 text-center"
         style="font-size: 1.6rem; font-weight: 700;
                color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
       {{ gira.linha }}
     </h2>
-  </div>
 
-  <!-- Botão direita -->
-  <button id="nextGira" class="btn btn-outline-secondary btn-sm"
-          style="border:none; background:none; color:#999;"
-          title="Próxima gira">
-    <i class="bi bi-chevron-right" style="font-size:1.5rem;"></i>
-  </button>
-</div>
+    <!-- Frase fixa -->
+    <p class="mb-0 text-center"
+       style="font-size: 0.95rem;
+              color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
+      Escolha ou visualize as funções assumidas para esta gira.<br>
+      Cambones e responsáveis de cada área estão listados abaixo.
+    </p>
+  </div>
 {% else %}
   <div class="alert alert-warning">Nenhuma gira encontrada.</div>
 {% endif %}
+
 
 
   <hr class="my-4"
@@ -323,16 +336,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const prevBtn = document.getElementById('prevGira');
   const nextBtn = document.getElementById('nextGira');
   const giraIdAtual = "{{ gira.id }}";
+  const tema = "{{ tema }}";
 
-  // Lista de giras disponíveis (será passada pelo backend)
-  const giras = {{ giras_json|safe }}; // Ex: [{id:1,data:"2025-10-01"}, {id:2,data:"2025-11-01"}]
+  // Lista de giras (gerado no backend)
+  const giras = {{ giras_json|safe }};
   let index = giras.findIndex(g => g.id === parseInt(giraIdAtual));
+
+  // Cores do tema
+  const corAtiva = tema === 'exu' ? '#b00000' : '#0072bb';
+  const corInativa = '#cccccc';
 
   function atualizarBotoes() {
     prevBtn.disabled = (index <= 0);
     nextBtn.disabled = (index >= giras.length - 1);
-    prevBtn.style.color = prevBtn.disabled ? '#ccc' : '#555';
-    nextBtn.style.color = nextBtn.disabled ? '#ccc' : '#555';
+    prevBtn.style.color = prevBtn.disabled ? corInativa : corAtiva;
+    nextBtn.style.color = nextBtn.disabled ? corInativa : corAtiva;
   }
 
   function navegar(offset) {
@@ -349,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizarBotoes();
   }
 
-  // --- Swipe (mobile) ---
+  // Swipe (mobile)
   let touchStartX = 0;
   let touchEndX = 0;
   document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
@@ -362,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
 
 </script>
 
