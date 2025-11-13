@@ -6,8 +6,10 @@
   {% if gira %}
   <div class="mb-4 text-start position-relative">
 
-    <!-- Linha da data e setas -->
-    <div class="d-flex align-items-center justify-content-between mb-1">
+    <!-- Linha de data com setas (alinhadas à esquerda) -->
+    <div class="d-flex align-items-center mb-1" style="gap: 8px;">
+
+      <!-- Botão anterior -->
       <button id="prevGira"
               class="btn btn-link p-0"
               style="color:#ccc;"
@@ -15,12 +17,14 @@
         <i class="bi bi-chevron-left" style="font-size:1.5rem;"></i>
       </button>
 
-      <p class="mb-0 text-center flex-grow-1"
+      <!-- Data -->
+      <p class="mb-0"
          style="font-size: 0.95rem; font-weight: 500;
                 color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
         {{ gira.data_hora|date:"d/m/Y H:i" }}
       </p>
 
+      <!-- Botão próxima -->
       <button id="nextGira"
               class="btn btn-link p-0"
               style="color:#ccc;"
@@ -29,15 +33,15 @@
       </button>
     </div>
 
-    <!-- Linha do nome -->
-    <h2 class="mb-2 text-center"
+    <!-- Linha (nome da gira) -->
+    <h2 class="mb-2"
         style="font-size: 1.6rem; font-weight: 700;
                color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
       {{ gira.linha }}
     </h2>
 
-    <!-- Frase fixa -->
-    <p class="mb-0 text-center"
+    <!-- Frase fixa (sem centralizar) -->
+    <p class="mb-0"
        style="font-size: 0.95rem;
               color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
       Escolha ou visualize as funções assumidas para esta gira.<br>
@@ -47,7 +51,6 @@
 {% else %}
   <div class="alert alert-warning">Nenhuma gira encontrada.</div>
 {% endif %}
-
 
 
   <hr class="my-4"
