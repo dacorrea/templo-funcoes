@@ -3,71 +3,49 @@
 {% block content %}
 <div class="container my-4">
 
- {% if gira %}
-  <!-- Cabeçalho com grid 3x3: colunas (seta | conteúdo | seta), linhas (data | título | frase) -->
-  <div class="mb-4 position-relative" style="width:100%;">
+{% if gira %}
+  <div class="mb-4 text-start position-relative" style="width:100%;">
 
-    <div style="
-        display: grid;
-        grid-template-columns: 48px 1fr 48px;
-        grid-template-rows: auto auto auto;
-        align-items: start;
-        gap: 6px 12px;
-        ">
-      <!-- Coluna 1 (seta esquerda) - vazia linha1 -->
-      <div style="grid-column:1; grid-row:1;"></div>
+    <!-- Linha de setas acima da data -->
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <button id="prevGira" class="btn btn-link p-0" title="Gira anterior"
+              style="color:#ccc; background:transparent; border:none;">
+        <i class="bi bi-chevron-left" style="font-size:1.6rem;"></i>
+      </button>
 
-      <!-- Data (coluna central, linha1) -->
-      <div style="grid-column:2; grid-row:1;" class="text-start">
-        <p class="mb-0"
-           style="font-size: 0.95rem; font-weight: 500;
-                  color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
-          {{ gira.data_hora|date:"d/m/Y H:i" }}
-        </p>
-      </div>
-
-      <!-- Coluna 3 (seta direita) - vazia linha1 -->
-      <div style="grid-column:3; grid-row:1;"></div>
-
-      <!-- Coluna 1 (seta esquerda) - LINHA 2: seta posicionada entre data e título -->
-      <div style="grid-column:1; grid-row:2; display:flex; align-items:center; justify-content:center;">
-        <button id="prevGira" class="btn btn-link p-0" title="Gira anterior"
-                style="color:#ccc; background:transparent; border:none;">
-          <i class="bi bi-chevron-left" style="font-size:1.6rem;"></i>
-        </button>
-      </div>
-
-      <!-- Coluna central (TÍTULO) -->
-      <div style="grid-column:2; grid-row:2;" class="text-start">
-        <h2 class="mb-2"
-            style="font-size: 1.6rem; font-weight: 700;
-                   color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
-          {{ gira.linha }}
-        </h2>
-      </div>
-
-      <!-- Coluna 3 (seta direita) - LINHA 2 -->
-      <div style="grid-column:3; grid-row:2; display:flex; align-items:center; justify-content:center;">
-        <button id="nextGira" class="btn btn-link p-0" title="Próxima gira"
-                style="color:#ccc; background:transparent; border:none;">
-          <i class="bi bi-chevron-right" style="font-size:1.6rem;"></i>
-        </button>
-      </div>
-
-      <!-- Coluna central (Frase fixa) -->
-      <div style="grid-column:2; grid-row:3;" class="text-start">
-        <p class="mb-0"
-           style="font-size: 0.95rem;
-                  color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
-          Escolha ou visualize as funções assumidas para esta gira.<br>
-          Cambones e responsáveis de cada área estão listados abaixo.
-        </p>
-      </div>
+      <button id="nextGira" class="btn btn-link p-0" title="Próxima gira"
+              style="color:#ccc; background:transparent; border:none;">
+        <i class="bi bi-chevron-right" style="font-size:1.6rem;"></i>
+      </button>
     </div>
+
+    <!-- Data -->
+    <p class="mb-1"
+       style="font-size: 0.95rem; font-weight: 500;
+              color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
+      {{ gira.data_hora|date:"d/m/Y H:i" }}
+    </p>
+
+    <!-- Linha (Exu, Malandros etc.) -->
+    <h2 class="mb-2"
+        style="font-size: 1.6rem; font-weight: 700;
+               color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
+      {{ gira.linha }}
+    </h2>
+
+    <!-- Frase fixa -->
+    <p class="mb-0"
+       style="font-size: 0.95rem;
+              color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
+      Escolha ou visualize as funções assumidas para esta gira.<br>
+      Cambones e responsáveis de cada área estão listados abaixo.
+    </p>
+
   </div>
 {% else %}
   <div class="alert alert-warning">Nenhuma gira encontrada.</div>
 {% endif %}
+
 
   <hr class="my-4"
       style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
