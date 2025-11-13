@@ -251,7 +251,7 @@ def desistir_funcao(request):
 # -------------------------------------------------------------------
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .models import Gira, GiraFuncao, GiraMedium  # ajuste nomes caso sejam diferentes
+from .models import Gira, Funcao, Medium, Historico, User
 from django.db.models import Q
 
 # Permitir acesso apenas para superusers (ajuste se preferir outro critério)
