@@ -368,3 +368,20 @@ def lista_funcoes_dev(request, gira_id=None):
         'giras_json': giras_json,
     }
     return render(request, 'gira/lista_funcoes_dev.html', contexto)
+
+
+from django.http import JsonResponse
+from .models import Gira, GiraFuncaoHistorico
+from django.forms.models import model_to_dict
+
+def get_gira_data(request, gira_id):
+    gira = Gira.objects.filter(id=gira_id).first()
+    if not gira:
+        return JsonResponse({'erro': 'Gira não encontrada'}, status=404)
+
+    funcoes = list(GiraFuncaoHistorico.objects.filter(gira_id=gira_id).values())
+    return JsonResponse({
+        'gira': model_to_dict(gira, fields=['id', 'linha', 'data_hora']),
+        'funcoes': funcoes
+    })
+
