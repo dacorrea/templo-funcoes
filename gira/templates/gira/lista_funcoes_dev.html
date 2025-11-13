@@ -433,22 +433,143 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================
   // Função carregarGira (apenas atualiza cards)
   // =========================
-  window.carregarGira = async function(giraId) {
-    try {
-      document.body.classList.add('loading');
-      const resp = await fetch(`/funcoes_dev/data/${giraId}/`);
-      const dados = await resp.json();
+  window.carregarGira = async function (giraId, apenasTema=false) {
+  try {
+    // Fade inicial
+    mainContent.classList.add('fade-out');
 
-      atualizarContainer(document.querySelector('#cambones-container'), dados.cambones || [], 'cambones');
-      atualizarContainer(document.querySelector('#organizacao-container'), dados.organizacao || [], 'organizacao');
-      atualizarContainer(document.querySelector('#limpeza-container'), dados.limpeza || [], 'limpeza');
-    } catch (err) {
-      console.error('Erro ao carregar gira:', err);
-      showToast('Erro ao carregar gira', '#dc3545');
-    } finally {
-      document.body.classList.remove('loading');
+    // Spinner com pequeno delay para não piscar rapidamente
+    spinnerTimer = setTimeout(() => {
+      document.body.classList.add('loading');
+    }, 200);
+
+    // Busca os dados da gira
+    const resp = await fetch(`/funcoes_dev/data/${giraId}/`);
+    const dados = await resp.json();
+
+    // Atualiza data e linha imediatamente
+    const dataEl = document.querySelector('#gira-data');
+    const linhaEl = document.querySelector('#gira-linha');
+    if (dataEl && dados.gira && dados.gira.data_hora) {
+      dataEl.innerText = new Date(dados.gira.data_hora)
+        .toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     }
+    if (linhaEl && dados.gira && dados.gira.linha) {
+      linhaEl.innerText = dados.gira.linha;
+    }
+
+    // Atualiza tema imediatamente
+    const isExu = dados.gira && /exu/i.test(dados.gira.linha || '');
+    if (navbar) {
+      navbar.style.background = isExu
+        ? 'linear-gradient(to right, #000000, #4d0000, #990000)'
+        : 'linear-gradient(to right, #002147, #6e9cb9, #A4D2E8)';
+    }
+    const corAtiva = isExu ? '#b00000' : '#0072bb';
+    const corSec = isExu ? '#660000' : '#cccccc';
+    if (dataEl) dataEl.style.color = isExu ? '#ff4d4d' : '#0072bb';
+    if (linhaEl) linhaEl.style.color = isExu ? '#c00000' : '#222222';
+    if (sep1) sep1.style.borderColor = corSec;
+    if (sep2) sep2.style.borderColor = corSec;
+    if (sep3) sep3.style.borderColor = corSec;
+    if (titleCambones) titleCambones.style.color = corAtiva;
+    if (titleOrg) titleOrg.style.color = corAtiva;
+    if (titleLimpeza) titleLimpeza.style.color = corAtiva;
+
+    if (apenasTema) return;
+
+    // Containers
+    const cambonesContainer = document.querySelector('#cambones-container');
+    const orgContainer = document.querySelector('#organizacao-container');
+    const limpezaContainer = document.querySelector('#limpeza-container');
+
+    // Criação de card genérico
+    function criarCard(f, blocoName) {
+      const chave = f.chave ?? f.key ?? f.id ?? `id${Math.random().toString(36).slice(2,8)}`;
+      const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
+      const status = (f.status || f.st || '').toString();
+      const descricao = f.descricao || f.tipo || '';
+      const pessoaId = (f.pessoa && f.pessoa.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
+      const pessoaNome = (f.pessoa && f.pessoa.nome) ? f.pessoa.nome
+        : (f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '');
+      const mediumLinha = f.medium_de_linha ? f.medium_de_linha.nome : '';
+
+      const div = document.createElement('div');
+      div.id = `card-${chave}`;
+      div.dataset.funcao = chave;
+      if (pessoaId) div.dataset.pessoa = pessoaId;
+      div.className = 'col-6 col-md-4 col-lg-3';
+
+      const isVaga = (status + '').toLowerCase().includes('vaga') || (status + '').toLowerCase().includes('open') || (status === '');
+      let titulo = descricao || (blocoName === 'limpeza' ? 'Limpeza' : '—');
+      if (blocoName === 'cambones' && mediumLinha) titulo = mediumLinha;
+
+      div.innerHTML = `
+        <div class="card border-0 shadow-sm h-100 position-relative ${isExu ? 'bg-light' : 'bg-body-tertiary'}">
+          ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>` : ''}
+          <div class="card-body p-3 text-start">
+            <div class="fw-semibold text-dark" style="font-size:0.95rem;">${titulo}</div>
+            <div class="text-muted" style="font-size:0.85rem;">
+              ${isVaga
+                ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`
+                : `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`}
+            </div>
+          </div>
+        </div>`;
+      return div;
+    }
+
+    // Agrupa funções
+    let grouped = { cambones: [], organizacao: [], limpeza: [] };
+    if (Array.isArray(dados.cambones) || Array.isArray(dados.organizacao) || Array.isArray(dados.limpeza)) {
+      grouped.cambones = Array.isArray(dados.cambones) ? dados.cambones : [];
+      grouped.organizacao = Array.isArray(dados.organizacao) ? dados.organizacao : [];
+      grouped.limpeza = Array.isArray(dados.limpeza) ? dados.limpeza : [];
+    } else if (Array.isArray(dados.funcoes)) {
+      function descricaoIncluiLimpeza(f) {
+        const text = ((f.descricao || f.tipo || f.nome || '') + '').toLowerCase();
+        return text.includes('limpeza') || text.includes('limpo') || text.includes('faxina');
+      }
+      dados.funcoes.forEach(f => {
+        const tipo = (f.tipo || f.descricao || '').toString().toLowerCase();
+        const grupo = (f.grupo || '').toString().toLowerCase();
+        if (grupo.includes('cambon') || tipo.includes('cambon')) grouped.cambones.push(f);
+        else if (tipo.includes('limpeza') || descricaoIncluiLimpeza(f)) grouped.limpeza.push(f);
+        else grouped.organizacao.push(f);
+      });
+    }
+
+    // Fade nos containers
+    function atualizarContainer(container, items, blocoName) {
+      if (!container) return;
+      container.classList.add('fade-block-out');
+      setTimeout(() => {
+        container.innerHTML = '';
+        items.forEach(f => container.appendChild(criarCard(f, blocoName)));
+        container.classList.remove('fade-block-out');
+        container.classList.add('fade-block-in');
+        setTimeout(() => container.classList.remove('fade-block-in'), 250);
+      }, 150);
+    }
+
+    atualizarContainer(cambonesContainer, grouped.cambones, 'cambones');
+    atualizarContainer(orgContainer, grouped.organizacao, 'organizacao');
+    atualizarContainer(limpezaContainer, grouped.limpeza, 'limpeza');
+
+  } catch (err) {
+    console.error('Erro ao carregar gira:', err);
+    showToast('Erro ao carregar gira', '#dc3545');
+  } finally {
+    clearTimeout(spinnerTimer);
+    document.body.classList.remove('loading');
+    requestAnimationFrame(() => {
+      mainContent.classList.remove('fade-out');
+      mainContent.classList.add('fade-in');
+      setTimeout(() => mainContent.classList.remove('fade-in'), 260);
+    });
   }
+};
+
 
   // =========================
   // CARROSSEL DE GIRAS (setas & swipe)
