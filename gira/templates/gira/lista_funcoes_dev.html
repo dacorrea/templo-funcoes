@@ -386,8 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const descricao = f.descricao || f.tipo || '';
     const pessoaId = (f.pessoa && f.pessoa.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
     const pessoaNome = (f.pessoa && f.pessoa.nome) ? f.pessoa.nome : (f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '');
-    const mediumLinhaNome = (f.medium_de_linha && f.medium_de_linha.nome) ? f.medium_de_linha.nome : '—';
-    const mediumLinhaId = (f.medium_de_linha && f.medium_de_linha.id) ? f.medium_de_linha.id : '';
+    
+    // Corrigir medium_de_linha
+    let mediumLinha = '';
+    if (blocoName === 'cambones') {
+        if (f.medium_de_linha) mediumLinha = f.medium_de_linha.nome ?? '';
+        else if (f.medium_de_linha_nome) mediumLinha = f.medium_de_linha_nome ?? ''; // fallback se JSON vier diferente
+    }
 
     const div = document.createElement('div');
     div.id = `card-${chave}`;
@@ -396,24 +401,26 @@ document.addEventListener('DOMContentLoaded', () => {
     div.className = 'col-6 col-md-4 col-lg-3';
 
     const isVaga = (status + '').toLowerCase().includes('vaga') || (status + '').toLowerCase().includes('open') || (status === '');
+    
+    // Título do card
+    let titulo = descricao;
+    if (blocoName === 'limpeza') titulo = 'Limpeza';
+    if (blocoName === 'cambones' && mediumLinha) titulo = mediumLinha;
 
-    let innerHTML = `<div class="card border-0 shadow-sm h-100 position-relative">`;
-    if (isVaga) innerHTML += `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>`;
-    innerHTML += `<div class="card-body p-3 text-start">
-                    <div class="fw-semibold text-dark" style="font-size:0.95rem;">`;
-
-    if (blocoName === 'cambones') innerHTML += `<span class="nome-medium" data-medium-id="${mediumLinhaId}">${mediumLinhaNome}</span>`;
-    else innerHTML += `${descricao || (blocoName === 'limpeza' ? 'Limpeza' : '—')}`;
-
-    innerHTML += `</div><div class="text-muted" style="font-size:0.85rem;">`;
-
-    if (isVaga) innerHTML += `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`;
-    else if (blocoName !== 'cambones') innerHTML += `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`;
-
-    innerHTML += `</div></div></div>`;
-    div.innerHTML = innerHTML;
+    div.innerHTML = `
+      <div class="card border-0 shadow-sm h-100 position-relative">
+        ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>` : ''}
+        <div class="card-body p-3 text-start">
+          <div class="fw-semibold text-dark" style="font-size:0.95rem;">${titulo || '—'}</div>
+          <div class="text-muted" style="font-size:0.85rem;">
+            ${isVaga
+              ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`
+              : `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`}
+          </div>
+        </div>
+      </div>`;
     return div;
-  }
+}
 
   // =========================
   // Função para atualizar containers
