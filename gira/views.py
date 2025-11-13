@@ -266,6 +266,8 @@ def desistir_funcao(request):
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from .models import Gira, Funcao, Medium, Historico, User, GiraFuncaoHistorico
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 
 def lista_funcoes_dev(request, gira_id=None):
     """
