@@ -5,6 +5,36 @@
 
   {% if gira %}
     <div class="mb-4 text-start">
+      <div class="mb-4 text-start position-relative">
+
+  {% if gira_anterior %}
+  <a href="{% url 'gira:lista_funcoes_dev_by_id' gira_anterior.id %}"
+     class="position-absolute top-50 start-0 translate-middle-y text-decoration-none"
+     style="font-size:2rem; color:{% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
+     &#x276E;
+  </a>
+  {% endif %}
+
+  <p class="mb-1"
+     style="font-size: 0.95rem; font-weight: 500;
+            color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
+    {{ gira.data_hora|date:"d/m/Y H:i" }}
+  </p>
+  <h2 class="mb-2"
+      style="font-size: 1.6rem; font-weight: 700;
+             color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
+    {{ gira.linha }}
+  </h2>
+
+  {% if gira_proxima %}
+  <a href="{% url 'gira:lista_funcoes_dev_by_id' gira_proxima.id %}"
+     class="position-absolute top-50 end-0 translate-middle-y text-decoration-none"
+     style="font-size:2rem; color:{% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
+     &#x276F;
+  </a>
+  {% endif %}
+</div>
+
       <p class="mb-1"
          style="font-size: 0.95rem; font-weight: 500;
                 color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
