@@ -1,41 +1,41 @@
 {% extends 'gira/base.html' %}
 
 {% block content %}
-<div class="container my-4">
+<div class="container my-0">
 
 {% if gira %}
-  <div class="mb-4 text-start position-relative" style="width:100%;">
+  <div class="text-start position-relative" style="width:100%; margin-top: 0.5rem;">
 
-    <!-- Linha de setas acima da data -->
-    <div class="d-flex justify-content-between align-items-center mb-1">
+    <!-- Linha de setas bem próxima à navbar -->
+    <div class="d-flex justify-content-between align-items-center mb-0" style="margin-top:0.3rem;">
       <button id="prevGira" class="btn btn-link p-0" title="Gira anterior"
-              style="color:#ccc; background:transparent; border:none;">
-        <i class="bi bi-chevron-left" style="font-size:1.6rem;"></i>
+              style="color:#bbb; background:transparent; border:none;">
+        <i class="bi bi-chevron-left" style="font-size:1.3rem;"></i>
       </button>
 
       <button id="nextGira" class="btn btn-link p-0" title="Próxima gira"
-              style="color:#ccc; background:transparent; border:none;">
-        <i class="bi bi-chevron-right" style="font-size:1.6rem;"></i>
+              style="color:#bbb; background:transparent; border:none;">
+        <i class="bi bi-chevron-right" style="font-size:1.3rem;"></i>
       </button>
     </div>
 
     <!-- Data -->
-    <p class="mb-1"
-       style="font-size: 0.95rem; font-weight: 500;
+    <p class="mb-1 mt-1"
+       style="font-size: 0.9rem; font-weight: 500;
               color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
       {{ gira.data_hora|date:"d/m/Y H:i" }}
     </p>
 
-    <!-- Linha (Exu, Malandros etc.) -->
-    <h2 class="mb-2"
-        style="font-size: 1.6rem; font-weight: 700;
+    <!-- Linha -->
+    <h2 class="mb-1"
+        style="font-size: 1.5rem; font-weight: 700;
                color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
       {{ gira.linha }}
     </h2>
 
     <!-- Frase fixa -->
     <p class="mb-0"
-       style="font-size: 0.95rem;
+       style="font-size: 0.9rem;
               color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
       Escolha ou visualize as funções assumidas para esta gira.<br>
       Cambones e responsáveis de cada área estão listados abaixo.
@@ -45,6 +45,7 @@
 {% else %}
   <div class="alert alert-warning">Nenhuma gira encontrada.</div>
 {% endif %}
+
 
 
   <hr class="my-4"
