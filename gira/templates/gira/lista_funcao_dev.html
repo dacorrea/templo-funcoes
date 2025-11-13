@@ -4,57 +4,38 @@
 <div class="container my-4">
 
   {% if gira %}
-    <div class="mb-4 text-start">
-      <div class="mb-4 text-start position-relative">
+<div class="d-flex align-items-center justify-content-between mb-4 position-relative">
+  <!-- Botão esquerda -->
+  <button id="prevGira" class="btn btn-outline-secondary btn-sm" 
+          style="border:none; background:none; color:#999;"
+          title="Gira anterior">
+    <i class="bi bi-chevron-left" style="font-size:1.5rem;"></i>
+  </button>
 
-  {% if gira_anterior %}
-  <a href="{% url 'gira:lista_funcoes_dev_by_id' gira_anterior.id %}"
-     class="position-absolute top-50 start-0 translate-middle-y text-decoration-none"
-     style="font-size:2rem; color:{% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
-     &#x276E;
-  </a>
-  {% endif %}
+  <div class="text-center flex-grow-1">
+    <p class="mb-1"
+       style="font-size: 0.95rem; font-weight: 500;
+              color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
+      {{ gira.data_hora|date:"d/m/Y H:i" }}
+    </p>
+    <h2 class="mb-0"
+        style="font-size: 1.6rem; font-weight: 700;
+               color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
+      {{ gira.linha }}
+    </h2>
+  </div>
 
-  <p class="mb-1"
-     style="font-size: 0.95rem; font-weight: 500;
-            color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
-    {{ gira.data_hora|date:"d/m/Y H:i" }}
-  </p>
-  <h2 class="mb-2"
-      style="font-size: 1.6rem; font-weight: 700;
-             color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
-    {{ gira.linha }}
-  </h2>
-
-  {% if gira_proxima %}
-  <a href="{% url 'gira:lista_funcoes_dev_by_id' gira_proxima.id %}"
-     class="position-absolute top-50 end-0 translate-middle-y text-decoration-none"
-     style="font-size:2rem; color:{% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
-     &#x276F;
-  </a>
-  {% endif %}
+  <!-- Botão direita -->
+  <button id="nextGira" class="btn btn-outline-secondary btn-sm"
+          style="border:none; background:none; color:#999;"
+          title="Próxima gira">
+    <i class="bi bi-chevron-right" style="font-size:1.5rem;"></i>
+  </button>
 </div>
+{% else %}
+  <div class="alert alert-warning">Nenhuma gira encontrada.</div>
+{% endif %}
 
-      <p class="mb-1"
-         style="font-size: 0.95rem; font-weight: 500;
-                color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
-        {{ gira.data_hora|date:"d/m/Y H:i" }}
-      </p>
-      <h2 class="mb-2"
-          style="font-size: 1.6rem; font-weight: 700;
-                 color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
-        {{ gira.linha }}
-      </h2>
-      <p class="mb-0"
-         style="font-size: 0.95rem;
-                color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
-        Escolha ou visualize as funções assumidas para esta gira.<br>
-        Cambones e responsáveis de cada área estão listados abaixo.
-      </p>
-    </div>
-  {% else %}
-    <div class="alert alert-warning">Nenhuma gira encontrada.</div>
-  {% endif %}
 
   <hr class="my-4"
       style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
@@ -336,6 +317,52 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+
+  // --- CONTROLE DO CARROSSEL DE GIRAS ---
+document.addEventListener('DOMContentLoaded', () => {
+  const prevBtn = document.getElementById('prevGira');
+  const nextBtn = document.getElementById('nextGira');
+  const giraIdAtual = "{{ gira.id }}";
+
+  // Lista de giras disponíveis (será passada pelo backend)
+  const giras = {{ giras_json|safe }}; // Ex: [{id:1,data:"2025-10-01"}, {id:2,data:"2025-11-01"}]
+  let index = giras.findIndex(g => g.id === parseInt(giraIdAtual));
+
+  function atualizarBotoes() {
+    prevBtn.disabled = (index <= 0);
+    nextBtn.disabled = (index >= giras.length - 1);
+    prevBtn.style.color = prevBtn.disabled ? '#ccc' : '#555';
+    nextBtn.style.color = nextBtn.disabled ? '#ccc' : '#555';
+  }
+
+  function navegar(offset) {
+    const novo = index + offset;
+    if (novo >= 0 && novo < giras.length) {
+      const giraDestino = giras[novo];
+      window.location.href = `/funcoes_dev/${giraDestino.id}/`;
+    }
+  }
+
+  if (prevBtn && nextBtn) {
+    prevBtn.addEventListener('click', () => navegar(-1));
+    nextBtn.addEventListener('click', () => navegar(1));
+    atualizarBotoes();
+  }
+
+  // --- Swipe (mobile) ---
+  let touchStartX = 0;
+  let touchEndX = 0;
+  document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
+  document.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchEndX - touchStartX;
+    if (Math.abs(diff) > 60) {
+      if (diff > 0) navegar(-1);
+      else navegar(1);
+    }
+  });
+});
+
 </script>
 
 {% endblock %}
