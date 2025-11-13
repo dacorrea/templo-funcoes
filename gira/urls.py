@@ -14,5 +14,7 @@ urlpatterns = [
     
     path('funcoes_dev/', views.lista_funcoes_dev, name='lista_funcoes_dev'),
     path('funcoes_dev/<int:gira_id>/', views.lista_funcoes_dev, name='lista_funcoes_dev_by_id'),
+    path("funcoes_dev/data/<int:gira_id>/", views.get_gira_data, name="get_gira_data"),
+
 
 ]
