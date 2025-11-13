@@ -3,54 +3,56 @@
 {% block content %}
 <div class="container my-4">
 
-  {% if gira %}
-  <div class="mb-4 text-start position-relative">
-
-    <!-- Linha de data com setas (alinhadas à esquerda) -->
-    <div class="d-flex align-items-center mb-1" style="gap: 8px;">
-
-      <!-- Botão anterior -->
+ {% if gira %}
+  <div class="mb-4 position-relative">
+    
+    <!-- Contêiner principal -->
+    <div class="d-flex justify-content-between align-items-center position-relative mb-2">
+      
+      <!-- Seta esquerda -->
       <button id="prevGira"
-              class="btn btn-link p-0"
-              style="color:#ccc;"
+              class="btn btn-link p-0 position-absolute"
+              style="left: 0; top: 50%; transform: translateY(-50%); color: #ccc;"
               title="Gira anterior">
-        <i class="bi bi-chevron-left" style="font-size:1.5rem;"></i>
+        <i class="bi bi-chevron-left" style="font-size:1.6rem;"></i>
       </button>
 
-      <!-- Data -->
-      <p class="mb-0"
-         style="font-size: 0.95rem; font-weight: 500;
-                color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
-        {{ gira.data_hora|date:"d/m/Y H:i" }}
-      </p>
+      <!-- Bloco central (data + linha + frase) -->
+      <div class="mx-auto text-start" style="max-width: 90%;">
+        <p class="mb-1"
+           style="font-size: 0.95rem; font-weight: 500;
+                  color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
+          {{ gira.data_hora|date:"d/m/Y H:i" }}
+        </p>
 
-      <!-- Botão próxima -->
+        <h2 class="mb-2"
+            style="font-size: 1.6rem; font-weight: 700;
+                   color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
+          {{ gira.linha }}
+        </h2>
+
+        <p class="mb-0"
+           style="font-size: 0.95rem;
+                  color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
+          Escolha ou visualize as funções assumidas para esta gira.<br>
+          Cambones e responsáveis de cada área estão listados abaixo.
+        </p>
+      </div>
+
+      <!-- Seta direita -->
       <button id="nextGira"
-              class="btn btn-link p-0"
-              style="color:#ccc;"
+              class="btn btn-link p-0 position-absolute"
+              style="right: 0; top: 50%; transform: translateY(-50%); color: #ccc;"
               title="Próxima gira">
-        <i class="bi bi-chevron-right" style="font-size:1.5rem;"></i>
+        <i class="bi bi-chevron-right" style="font-size:1.6rem;"></i>
       </button>
     </div>
 
-    <!-- Linha (nome da gira) -->
-    <h2 class="mb-2"
-        style="font-size: 1.6rem; font-weight: 700;
-               color: {% if tema == 'exu' %}#c00000{% else %}#222222{% endif %};">
-      {{ gira.linha }}
-    </h2>
-
-    <!-- Frase fixa (sem centralizar) -->
-    <p class="mb-0"
-       style="font-size: 0.95rem;
-              color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
-      Escolha ou visualize as funções assumidas para esta gira.<br>
-      Cambones e responsáveis de cada área estão listados abaixo.
-    </p>
   </div>
 {% else %}
   <div class="alert alert-warning">Nenhuma gira encontrada.</div>
 {% endif %}
+
 
 
   <hr class="my-4"
