@@ -1,5 +1,40 @@
 {% extends 'gira/base.html' %}
 
+<script>
+async function carregarGira(giraId) {
+  try {
+    const resposta = await fetch(`/funcoes_dev/data/${giraId}/`);
+    const dados = await resposta.json();
+
+    // Atualiza data e linha
+    document.querySelector('#gira-data').innerText =
+      new Date(dados.gira.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    document.querySelector('#gira-linha').innerText = dados.gira.linha;
+
+    // Atualiza os cards
+    const container = document.querySelector('#funcoes-container');
+    container.innerHTML = ''; // limpa cards
+
+    dados.funcoes.forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'col-md-3 mb-3';
+      card.innerHTML = `
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h6>${f.descricao || f.tipo}</h6>
+            <p class="mb-1"><small>${f.status}</small></p>
+          </div>
+        </div>`;
+      container.appendChild(card);
+    });
+
+  } catch (e) {
+    console.error('Erro ao carregar gira:', e);
+  }
+}
+</script>
+
+
 {% block content %}
 <div class="container my-0">
 
