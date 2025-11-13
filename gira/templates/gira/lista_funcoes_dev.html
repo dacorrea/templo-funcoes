@@ -485,39 +485,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Criação de card genérico
     function criarCard(f, blocoName) {
-      const chave = f.chave ?? f.key ?? f.id ?? `id${Math.random().toString(36).slice(2,8)}`;
-      const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
-      const status = (f.status || f.st || '').toString();
-      const descricao = f.descricao || f.tipo || '';
-      const pessoaId = (f.pessoa && f.pessoa.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
-      const pessoaNome = (f.pessoa && f.pessoa.nome) ? f.pessoa.nome
-        : (f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '');
-      const mediumLinha = f.medium_de_linha ? f.medium_de_linha.nome : '';
+  const chave = f.chave ?? f.key ?? f.id ?? `id${Math.random().toString(36).slice(2,8)}`;
+  const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
+  const status = (f.status || f.st || '').toString();
+  const descricao = f.descricao || f.tipo || '';
+  const pessoaId = (f.pessoa && f.pessoa.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
+  const pessoaNome = (f.pessoa && f.pessoa.nome) ? f.pessoa.nome
+    : (f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '');
+  const mediumLinha = f.medium_de_linha ? f.medium_de_linha.nome : '';
 
-      const div = document.createElement('div');
-      div.id = `card-${chave}`;
-      div.dataset.funcao = chave;
-      if (pessoaId) div.dataset.pessoa = pessoaId;
-      div.className = 'col-6 col-md-4 col-lg-3';
+  const div = document.createElement('div');
+  div.id = `card-${chave}`;
+  div.dataset.funcao = chave;
+  if (pessoaId) div.dataset.pessoa = pessoaId;
+  div.className = 'col-6 col-md-4 col-lg-3';
 
-      const isVaga = (status + '').toLowerCase().includes('vaga') || (status + '').toLowerCase().includes('open') || (status === '');
-      let titulo = descricao || (blocoName === 'limpeza' ? 'Limpeza' : '—');
-      if (blocoName === 'cambones' && mediumLinha) titulo = mediumLinha;
+  const isVaga = (status + '').toLowerCase().includes('vaga') || (status + '').toLowerCase().includes('open') || (status === '');
 
-      div.innerHTML = `
-        <div class="card border-0 shadow-sm h-100 position-relative ${isExu ? 'bg-light' : 'bg-body-tertiary'}">
-          ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>` : ''}
-          <div class="card-body p-3 text-start">
-            <div class="fw-semibold text-dark" style="font-size:0.95rem;">${titulo}</div>
-            <div class="text-muted" style="font-size:0.85rem;">
-              ${isVaga
-                ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`
-                : `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`}
-            </div>
-          </div>
-        </div>`;
-      return div;
-    }
+  // **Título condicional por bloco**
+  let titulo = '—';
+  if (blocoName === 'cambones') {
+    titulo = mediumLinha || '—';
+  } else if (blocoName === 'limpeza') {
+    titulo = 'Limpeza';
+  } else { // organizacao ou outros
+    titulo = descricao || '—';
+  }
+
+  div.innerHTML = `
+    <div class="card border-0 shadow-sm h-100 position-relative">
+      ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>` : ''}
+      <div class="card-body p-3 text-start">
+        <div class="fw-semibold text-dark" style="font-size:0.95rem;">${titulo}</div>
+        <div class="text-muted" style="font-size:0.85rem;">
+          ${isVaga
+            ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`
+            : `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`}
+        </div>
+      </div>
+    </div>`;
+  return div;
+}
 
     // Agrupa funções
     let grouped = { cambones: [], organizacao: [], limpeza: [] };
