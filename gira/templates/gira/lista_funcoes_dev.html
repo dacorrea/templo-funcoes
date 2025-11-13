@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-  // --- CONTROLE DO CARROSSEL DE GIRAS ---
+// --- CONTROLE DO CARROSSEL DE GIRAS ---
 document.addEventListener('DOMContentLoaded', () => {
   const prevBtn = document.getElementById('prevGira');
   const nextBtn = document.getElementById('nextGira');
@@ -389,8 +389,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function navegar(offset) {
     const novo = index + offset;
     if (novo >= 0 && novo < giras.length) {
-      const giraDestino = giras[novo];
-      window.location.href = `/funcoes_dev/${giraDestino.id}/`;
+      index = novo; // atualiza índice
+      const giraDestino = giras[index];
+      carregarGira(giraDestino.id); // chama AJAX
+      atualizarBotoes();
     }
   }
 
@@ -413,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
 
 
 </script>
