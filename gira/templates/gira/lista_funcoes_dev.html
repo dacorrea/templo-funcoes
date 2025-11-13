@@ -391,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (novo >= 0 && novo < giras.length) {
       index = novo; // atualiza índice
       const giraDestino = giras[index];
-      carregarGira(giraDestino.id); // chama AJAX
+      window.carregarGira(giraDestino.id); // chama AJAX
       atualizarBotoes();
     }
   }
