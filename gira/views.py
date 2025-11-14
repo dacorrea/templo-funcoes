@@ -275,6 +275,7 @@ from django.utils import timezone
 # -------------------------------------------------------------------
 # (Estas views usam GiraFuncaoHistorico e checam a data)
 
+
 @require_POST
 @csrf_exempt
 def assumir_funcao_dev(request):
@@ -282,10 +283,12 @@ def assumir_funcao_dev(request):
     if not sess_user_id:
         return JsonResponse({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}, status=401)
 
-    # O JS desta template envia a 'funcao_chave'
-    funcao_chave = request.POST.get('funcao_chave') 
-    if not funcao_chave:
-        return JsonResponse({'status': 'erro', 'mensagem': 'Chave da função ausente.'}, status=400)
+    # O JS desta template envia a 'funcao_chave' E O 'gira_id'
+    funcao_chave = request.POST.get('funcao_chave')
+    gira_id = request.POST.get('gira_id') # <--- NOVO: Captura o ID da Gira
+
+    if not funcao_chave or not gira_id: # <--- Incluído o check para gira_id
+        return JsonResponse({'status': 'erro', 'mensagem': 'Parâmetros ausentes (chave da função ou ID da Gira).'}, status=400)
 
     try:
         medium = Medium.objects.get(user_id=sess_user_id)
@@ -293,10 +296,16 @@ def assumir_funcao_dev(request):
         return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado.'}, status=404)
 
     try:
-        # 1. Busca no modelo 'GiraFuncaoHistorico'
-        funcao = GiraFuncaoHistorico.objects.select_related('gira').get(chave=funcao_chave)
+        # 1. Busca no modelo 'GiraFuncaoHistorico', agora filtrando pela chave E pelo ID da Gira
+        funcao = GiraFuncaoHistorico.objects.select_related('gira').get(
+            chave=funcao_chave,
+            gira_id=gira_id  # <--- CORREÇÃO ESSENCIAL: Garante a unicidade da busca
+        )
     except GiraFuncaoHistorico.DoesNotExist:
         return JsonResponse({'status': 'erro', 'mensagem': 'Função (dev) inexistente.'}, status=404)
+    except GiraFuncaoHistorico.MultipleObjectsReturned:
+        # MANTIDO: Embora a correção deva evitar isso, é bom ter este catch.
+        return JsonResponse({'status': 'erro', 'mensagem': 'Erro interno: Múltiplas funções encontradas para Gira ID e Chave.'}, status=500)
 
     # 2. Checagem de data (regra de negócio)
     hoje = timezone.localdate()
@@ -313,10 +322,7 @@ def assumir_funcao_dev(request):
     funcao.status = 'Preenchida'
     funcao.save()
 
-    return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}', 'funcao_id': funcao.id})
-
-
-@require_POST
+    return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}', 'funcao_id': funcao.id})@require_POST
 @csrf_exempt
 def desistir_funcao_dev(request):
     sess_user_id = request.session.get('user_id')
