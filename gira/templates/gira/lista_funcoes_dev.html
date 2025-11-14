@@ -20,7 +20,7 @@
     </div>
 
     <!-- Data e linha -->
-    <p id="gira-data" class="mb-1 mt-1"
+    <p id="gira-data" data-gira-id="{{ gira.pk }}" class="mb-1 mt-1"
        style="font-size: 0.9rem; font-weight: 500;
               color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
       {{ gira.data_hora|date:"d/m/Y H:i" }}
@@ -369,6 +369,12 @@ body.loading #loading-overlay {
 </style>
 
 <script>
+const giraId = document.getElementById('gira-data')?.dataset.giraId;
+
+if (!giraId) {
+    console.error("ID da Gira não encontrado.");
+}
+  
 document.addEventListener('DOMContentLoaded', () => {
   const csrftoken = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)')?.pop();
   const toast = document.getElementById('toast-funcao');
@@ -715,19 +721,35 @@ function criarCard(f, blocoName, isExu, isGiraFuturaOuHoje) {
       }
       renderOwned(card);
       showToast('Assumindo função...', '#0d6efd');
+
+      if (!giraId) {
+    showToast('Erro interno: ID da Gira não encontrado.', '#dc3545');
+    return; // Interrompe a função
+}
       
-      // *** USA A NOVA URL DE DESENVOLVIMENTO ***
-      fetch("{% url 'gira:assumir_funcao_dev' %}", {
-        method: 'POST',
-        headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({ funcao_chave: funcaoChave })
-      }).then(r => r.json())
-        .then(d => {
-          if (d.status !== 'ok') renderVacant(card); 
-          showToast(d.mensagem || (d.status==='ok' ? 'Função assumida' : 'Erro ao assumir'), d.status==='ok' ? '#198754' : '#dc3545');
-        })
-        .catch(() => { renderVacant(card); showToast('Erro de rede ao assumir', '#dc3545'); });
-    }
+      fetch("{% url 'gira:assumir_funcao_dev' %}", {
+    method: 'POST',
+    headers: {
+        'X-CSRFToken': csrftoken, 
+        'Content-Type':'application/x-www-form-urlencoded'
+    },
+    // CORREÇÃO: Adicionando o parâmetro gira_id
+    body: new URLSearchParams({ 
+        funcao_chave: funcaoChave,
+        gira_id: giraId // <--- NOVO PARÂMETRO ESSENCIAL
+    })
+}).then(r => r.json())
+  .then(d => {
+      // Se o status não for 'ok', significa que o backend teve uma falha de lógica (ex: função já ocupada)
+      if (d.status !== 'ok') renderVacant(card); 
+      
+      showToast(d.mensagem || (d.status==='ok' ? 'Função assumida' : 'Erro ao assumir'), d.status==='ok' ? '#198754' : '#dc3545');
+  })
+  .catch((error) => { // É bom logar o erro para depuração
+      console.error("Erro no fetch:", error);
+      renderVacant(card); 
+      showToast('Erro de rede ao assumir (Verifique o console)', '#dc3545'); 
+  });
 
     // --- AÇÃO DE DESISTIR ---
     if (btnDesistir) {
