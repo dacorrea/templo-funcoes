@@ -387,32 +387,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const mediumId = "{{ medium_logado.id|default:'' }}";
   const mediumNome = "{{ medium_logado.nome|default:user.nome|escapejs }}";
 
-  // gira atual (inicial do template)
-  let currentGiraId = parseInt("{{ gira.id }}");
-  // timer do spinner
   let spinnerTimer = null;
 
   // util
   function showToast(msg, color='#198754') {
-    if (!toast) return;
     toast.textContent = msg;
     toast.style.backgroundColor = color;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 1800);
   }
 
-  // determina se uma gira (data ISO) permite edição: data >= hoje
-  function giraPermiteEditar(isoDateTime) {
-    if (!isoDateTime) return false;
-    const d = new Date(isoDateTime);
-    const today = new Date();
-    // zera horas para comparar só a data
-    today.setHours(0,0,0,0);
-    d.setHours(0,0,0,0);
-    return d.getTime() >= today.getTime();
-  }
-
-  // atualiza cor das setas conforme tema
+  // atualiza cor dos botões de acordo com tema (isExu boolean)
   function aplicarCoresBotoes(isExu) {
     const corAtiva = isExu ? '#b00000' : '#0072bb';
     const corInativa = '#cccccc';
@@ -421,85 +406,75 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.style.color = nextBtn.disabled ? corInativa : corAtiva;
   }
 
-  // render helpers (mantêm a mesma estrutura do template)
+  // render helpers
   function renderOwned(card) {
     if (!card) return;
     const meta = card.querySelector('.text-muted');
     if (!meta) return;
-    // quando um médium assume via UI, o card.dataset.funcao contém a CHAVE
-    const chave = card.dataset.funcao || '';
     meta.innerHTML = `
       <div class="d-flex align-items-center justify-content-start">
-        <button class="btn btn-link text-dark fw-semibold btn-nome-medium p-0"
-                data-medium-id="${mediumId}"
-                data-funcao="${chave}"
-                style="font-size:0.9rem;">
-          ${mediumNome}
-        </button>
-        <button class="btn btn-link text-danger btn-desistir p-0 ms-2"
-                data-chave="${chave}"
-                data-gira-id="${currentGiraId}"
+        <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
+        <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
+                data-funcao="${card.dataset.funcao}"
                 title="Desistir"
-                style="font-size:0.9rem;">
+                style="font-size:0.9rem; line-height:1;">
           <i class="bi bi-x-circle"></i>
         </button>
       </div>`;
     card.dataset.pessoa = mediumId;
   }
 
-  function renderVacant(card, canEdit=true) {
+  function renderVacant(card) {
     if (!card) return;
     const meta = card.querySelector('.text-muted');
     if (!meta) return;
-    const chave = card.dataset.funcao || '';
-    if (canEdit) {
-      meta.innerHTML = `
-        <button class="btn btn-sm btn-success btn-assumir"
-                data-chave="${chave}"
-                data-gira-id="${currentGiraId}"
-                style="font-size:0.8rem;">
-          Assumir
-        </button>`;
-    } else {
-      meta.innerHTML = `<span>—</span>`;
-    }
-    delete card.dataset.pessoa;
+    meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${card.dataset.funcao}" style="font-size:0.8rem;">Assumir</button>`;
+    card.dataset.pessoa = '';
   }
 
-  // criarCard robusto e consistente com o template
-  function criarCard(f, blocoName, isExu, canEdit) {
-    // normaliza campos (aceita muitos formatos)
-    const chave = f.chave ?? f.key ?? (f.id ? String(f.id) : `id${Math.random().toString(36).slice(2,8)}`);
-    const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
-    const status = (f.status ?? f.st ?? '').toString();
-    const descricao = f.descricao ?? f.tipo ?? f.nome ?? '';
-    // pessoa atribuída — pode vir como pessoa_id / pessoa__nome / pessoa object
-    const pessoaId = f.pessoa_id ?? (f.pessoa && f.pessoa.id) ?? '';
-    const pessoaNome = f.pessoa_nome ?? (f.pessoa && f.pessoa.nome) ?? f.pessoa__nome ?? '';
+  // criação de card com logs e robustez para vários formatos de JSON
+  function criarCard(f, blocoName, isExu) {
+    // logging por item para depurar
+    console.debug('[criarCard] item raw:', blocoName, f);
 
-    // medium_de_linha — prioridade para título do cambone
+    const chave = f.chave ?? f.key ?? f.id ?? `id${Math.random().toString(36).slice(2,8)}`;
+    const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
+    const status = (f.status || f.st || '').toString();
+    const descricao = f.descricao || f.tipo || f.nome || '';
+    const pessoaId = (f.pessoa && f.pessoa.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
+    const pessoaNome = (f.pessoa && f.pessoa.nome) ? f.pessoa.nome
+      : (f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '');
+    // tentativa robusta para medium_de_linha (várias formas possíveis)
     let mediumLinhaNome = '';
     let mediumLinhaId = '';
     if (f.medium_de_linha) {
+      // pode ser objeto {id:.., nome:..} ou já string etc.
       if (typeof f.medium_de_linha === 'object') {
-        mediumLinhaNome = f.medium_de_linha.nome ?? '';
+        mediumLinhaNome = f.medium_de_linha.nome ?? f.medium_de_linha_name ?? '';
         mediumLinhaId = f.medium_de_linha.id ?? '';
-      } else mediumLinhaNome = String(f.medium_de_linha);
+      } else if (typeof f.medium_de_linha === 'string') {
+        mediumLinhaNome = f.medium_de_linha;
+      }
     }
-    if (!mediumLinhaNome) mediumLinhaNome = f.medium_de_linha_nome ?? f.medium_de_linha__nome ?? '';
+    // fallbacks comuns que seu backend pode usar
+    if (!mediumLinhaNome) mediumLinhaNome = f.medium_de_linha_nome ?? f.medium_de_linha__nome ?? f.medium_de_linhaName ?? '';
+    if (!mediumLinhaId) mediumLinhaId = f.medium_de_linha_id ?? f.medium_de_linha__id ?? '';
+
+    // debug para entender quais campos chegaram
+    console.debug('[criarCard] resolved mediumLinhaNome, mediumLinhaId:', mediumLinhaNome, mediumLinhaId);
 
     const div = document.createElement('div');
     div.id = `card-${chave}`;
-    div.dataset.funcao = chave; // chave como identificador consistente
+    div.dataset.funcao = chave;
     if (pessoaId) div.dataset.pessoa = pessoaId;
-    if (mediumLinhaId) div.dataset.mediumDeLinhaId = mediumLinhaId;
     div.className = 'col-6 col-md-4 col-lg-3';
 
-    const isVaga = (!pessoaId && !(status && status.toLowerCase() && !status.toLowerCase().includes('vaga') )) || (status && status.toLowerCase().includes('vaga'));
+    const isVaga = (status + '').toLowerCase().includes('vaga') || (status + '').toLowerCase().includes('open') || (status === '');
 
-    // título conforme bloco
+    // título condicional por bloco
     let titulo = '—';
     if (blocoName === 'cambones') {
+      // PRIORIDADE: mediumLinhaNome (do campo medium_de_linha ou fallback). Se vazio, tenta descricao.
       if (mediumLinhaNome && mediumLinhaNome.trim() !== '') titulo = mediumLinhaNome;
       else if (descricao && descricao.trim() !== '') titulo = descricao;
       else titulo = '—';
@@ -509,37 +484,21 @@ document.addEventListener('DOMContentLoaded', () => {
       titulo = descricao || '—';
     }
 
+    // constrói innerHTML (aplica tema de fundo se necessário)
     const bgClass = isExu ? 'bg-light' : 'bg-body-tertiary';
-
-    // Montagem: cambones NÃO mostra botões nem badge "Vago"
-    if (blocoName === 'cambones') {
-      const pessoaDisplay = pessoaNome && pessoaNome.trim() !== '' ? pessoaNome : '—';
-      div.innerHTML = `
-        <div class="card border-0 shadow-sm ${bgClass} h-100 position-relative">
-          <div class="card-body p-3 text-start">
-            <div class="fw-semibold text-dark" style="font-size:0.95rem;">
-              <button class="btn btn-link p-0 nome-medium-de-linha" data-medium-id="${mediumLinhaId}" style="font-size:0.95rem;">
-                ${titulo}
-              </button>
-            </div>
-            <div class="text-muted" style="font-size:0.85rem;">
-              <span class="nome-pessoa" data-pessoa-id="${pessoaId}">${pessoaDisplay}</span>
-            </div>
-          </div>
-        </div>`;
-      return div;
-    }
-
-    // Para organizacao e limpeza: mantém badge Vago e botões conforme canEdit
     div.innerHTML = `
-      <div class="card border-0 shadow-sm ${bgClass} h-100 position-relative">
+      <div class="card border-0 shadow-sm h-100 position-relative ${bgClass}">
         ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>` : ''}
         <div class="card-body p-3 text-start">
-          <div class="fw-semibold text-dark" style="font-size:0.95rem;">${titulo}</div>
+          <div class="fw-semibold text-dark" style="font-size:0.95rem;">
+            ${titulo}
+          </div>
           <div class="text-muted" style="font-size:0.85rem;">
             ${isVaga
-              ? (canEdit ? `<button class="btn btn-sm btn-success btn-assumir" data-chave="${chave}" data-gira-id="${currentGiraId}" style="font-size:0.8rem;">Assumir</button>` : `<span>—</span>`)
-              : `<button class="btn btn-link text-dark fw-semibold btn-nome-medium p-0" data-medium-id="${pessoaId}" data-chave="${chave}" data-gira-id="${currentGiraId}" style="font-size:0.9rem;">${pessoaNome || '—'}</button>`
+              ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`
+              : (blocoName === 'cambones'
+                  ? `<span class="nome-medium" data-medium-id="${mediumLinhaId}">${mediumLinhaNome || '—'}</span>`
+                  : `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`)
             }
           </div>
         </div>
@@ -548,52 +507,50 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // atualiza container com fade e logs
-  function atualizarContainer(container, items, blocoName, isExu, canEdit) {
+  function atualizarContainer(container, items, blocoName, isExu) {
     if (!container) return;
-    console.debug('[atualizarContainer] bloco:', blocoName, 'items.length=', (items||[]).length);
+    console.debug('[atualizarContainer] bloco:', blocoName, 'items.length=', items?.length);
     container.classList.add('fade-block-out');
     setTimeout(() => {
       container.innerHTML = '';
-      (items || []).forEach(f => container.appendChild(criarCard(f, blocoName, isExu, canEdit)));
+      (items || []).forEach(f => container.appendChild(criarCard(f, blocoName, isExu)));
       container.classList.remove('fade-block-out');
       container.classList.add('fade-block-in');
       setTimeout(() => container.classList.remove('fade-block-in'), 250);
     }, 120);
   }
 
-  // carregarGira completo e robusto
+  // carregarGira (mantém transição/loader; logs detalhados)
   window.carregarGira = async function (giraId, apenasTema=false) {
     console.info('[carregarGira] start', { giraId, apenasTema });
     try {
-      // visual
+      // fade e spinner temporizado (spinner aparece se demorar)
       mainContent.classList.add('fade-out');
-      clearTimeout(spinnerTimer);
       spinnerTimer = setTimeout(() => document.body.classList.add('loading'), 200);
 
       const resp = await fetch(`/funcoes_dev/data/${giraId}/`);
       const dados = await resp.json();
-      console.debug('[carregarGira] dados recebidos:', dados);
+      console.debug('[carregarGira] dados recebidos do endpoint:', dados);
 
-      // atualiza currentGiraId (importante)
-      currentGiraId = Number(dados.gira?.id ?? giraId);
-
-      // atualiza header (data e linha)
+      // Atualiza data e linha
       const dataEl = document.querySelector('#gira-data');
       const linhaEl = document.querySelector('#gira-linha');
       if (dataEl && dados.gira && dados.gira.data_hora) {
-        dataEl.innerText = new Date(dados.gira.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        dataEl.innerText = new Date(dados.gira.data_hora)
+          .toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
       }
       if (linhaEl && dados.gira && dados.gira.linha) {
         linhaEl.innerText = dados.gira.linha;
       }
 
-      // aplica tema imediatamente (header + separadores + títulos)
+      // Atualiza tema imediatamente (e aplica cores nos botões)
       const novaLinha = dados.gira?.linha ?? (document.querySelector('#gira-linha')?.innerText || '');
       const isExu = /exu/i.test(novaLinha || '');
-      if (navbar) navbar.style.background = isExu
-        ? 'linear-gradient(to right, #000000, #4d0000, #990000)'
-        : 'linear-gradient(to right, #002147, #6e9cb9, #A4D2E8)';
-
+      if (navbar) {
+        navbar.style.background = isExu
+          ? 'linear-gradient(to right, #000000, #4d0000, #990000)'
+          : 'linear-gradient(to right, #002147, #6e9cb9, #A4D2E8)';
+      }
       const corAtiva = isExu ? '#b00000' : '#0072bb';
       const corSec = isExu ? '#660000' : '#cccccc';
       if (dataEl) dataEl.style.color = isExu ? '#ff4d4d' : '#0072bb';
@@ -605,28 +562,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (titleOrg) titleOrg.style.color = corAtiva;
       if (titleLimpeza) titleLimpeza.style.color = corAtiva;
 
+      // atualiza cores dos botões conforme tema
       aplicarCoresBotoes(isExu);
 
       if (apenasTema) {
-        console.info('[carregarGira] apenasTema true — atualizou tema/datas apenas');
+        console.info('[carregarGira] apenasTema true — finalizando sem atualizar cards');
         return;
       }
 
-      // containers
+      // Containers locais
       const cambonesContainer = document.querySelector('#cambones-container');
       const orgContainer = document.querySelector('#organizacao-container');
       const limpezaContainer = document.querySelector('#limpeza-container');
 
-      // determine canEdit para esta gira (data >= hoje)
-      const podeEditarEstaGira = giraPermiteEditar(dados.gira?.data_hora);
-
-      // agrupar funcoes / aceitar vários formatos
+      // normalize: aceitar vários formatos de retorno
       let grouped = { cambones: [], organizacao: [], limpeza: [] };
       if (Array.isArray(dados.cambones) || Array.isArray(dados.organizacao) || Array.isArray(dados.limpeza)) {
         grouped.cambones = Array.isArray(dados.cambones) ? dados.cambones : [];
         grouped.organizacao = Array.isArray(dados.organizacao) ? dados.organizacao : [];
         grouped.limpeza = Array.isArray(dados.limpeza) ? dados.limpeza : [];
       } else if (Array.isArray(dados.funcoes)) {
+        // heurística de agrupamento (mesma que antes)
         function descricaoIncluiLimpeza(f) {
           const text = ((f.descricao || f.tipo || f.nome || '') + '').toLowerCase();
           return text.includes('limpeza') || text.includes('limpo') || text.includes('faxina');
@@ -646,18 +602,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // atualiza containers (passa canEdit)
-      atualizarContainer(cambonesContainer, grouped.cambones, 'cambones', isExu, podeEditarEstaGira);
-      atualizarContainer(orgContainer, grouped.organizacao, 'organizacao', isExu, podeEditarEstaGira);
-      atualizarContainer(limpezaContainer, grouped.limpeza, 'limpeza', isExu, podeEditarEstaGira);
+      console.debug('[carregarGira] agrupamento concluído', {
+        cambones: grouped.cambones.length,
+        organizacao: grouped.organizacao.length,
+        limpeza: grouped.limpeza.length
+      });
 
-      console.info('[carregarGira] cards atualizados para gira', currentGiraId, 'podeEditar=', podeEditarEstaGira);
+      // Atualiza containers com fade (passa isExu para criarCard para background compatível)
+      atualizarContainer(cambonesContainer, grouped.cambones, 'cambones', isExu);
+      atualizarContainer(orgContainer, grouped.organizacao, 'organizacao', isExu);
+      atualizarContainer(limpezaContainer, grouped.limpeza, 'limpeza', isExu);
+
+      // debug final
+      console.info('[carregarGira] cards atualizados para gira', giraId);
+
     } catch (err) {
       console.error('[carregarGira] erro:', err);
       showToast('Erro ao carregar gira', '#dc3545');
     } finally {
       clearTimeout(spinnerTimer);
       document.body.classList.remove('loading');
+      // final fade-in suave
       requestAnimationFrame(() => {
         mainContent.classList.remove('fade-out');
         mainContent.classList.add('fade-in');
@@ -668,109 +633,50 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // =========================
-  // Eventos ASSUMIR / DESISTIR / CLIQUE NOME (delegação)
+  // Eventos ASSUMIR / DESISTIR (mantidos)
   // =========================
-  document.addEventListener('click', async (e) => {
-    // ASSUMIR (botão)
+  document.addEventListener('click', e => {
     const btnAssumir = e.target.closest('.btn-assumir');
+    const btnDesistir = e.target.closest('.btn-desistir');
+
     if (btnAssumir) {
-      const chave = btnAssumir.dataset.chave;
-      const giraIdAttr = btnAssumir.dataset.giraId ?? currentGiraId;
-      const card = document.querySelector(`[data-funcao="${chave}"]`);
-      // visual imediato
+      const funcaoId = btnAssumir.dataset.funcao;
+      const card = document.getElementById(`card-${funcaoId}`);
       renderOwned(card);
       showToast('Assumindo função...', '#0d6efd');
-
-      try {
-        const res = await fetch("{% url 'gira:assumir_funcao' %}", {
-          method: 'POST',
-          headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
-          body: new URLSearchParams({ funcao_chave: chave, gira_id: giraIdAttr })
-        });
-        const d = await res.json();
-        if (!d || d.status !== 'ok') {
-          renderVacant(card, true);
-          showToast(d?.mensagem || 'Erro ao assumir', '#dc3545');
-        } else {
-          showToast(d.mensagem || 'Função assumida', '#198754');
-        }
-      } catch (err) {
-        console.error('Assumir erro:', err);
-        renderVacant(card, true);
-        showToast('Erro de rede ao assumir', '#dc3545');
-      }
-      return;
+      fetch("{% url 'gira:assumir_funcao' %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({ funcao_chave: funcaoId })
+      }).then(r => r.json())
+        .then(d => {
+          if (d.status !== 'ok') renderVacant(card);
+          showToast(d.mensagem || (d.status==='ok' ? 'Função assumida' : 'Erro ao assumir'), d.status==='ok' ? '#198754' : '#dc3545');
+        })
+        .catch(() => { renderVacant(card); showToast('Erro de rede ao assumir', '#dc3545'); });
     }
 
-    // DESISTIR (botão)
-    const btnDesistir = e.target.closest('.btn-desistir');
     if (btnDesistir) {
-      const chave = btnDesistir.dataset.chave ?? btnDesistir.dataset.funcao;
-      const giraIdAttr = btnDesistir.dataset.giraId ?? currentGiraId;
-      const card = document.querySelector(`[data-funcao="${chave}"]`);
-      // visual imediato
-      renderVacant(card, true);
+      const funcaoId = btnDesistir.dataset.funcao;
+      const card = document.getElementById(`card-${funcaoId}`);
+      renderVacant(card);
       showToast('Desistindo da função...', '#ffc107');
-
-      try {
-        const res = await fetch("{% url 'gira:desistir_funcao' %}", {
-          method: 'POST',
-          headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
-          body: new URLSearchParams({ funcao_chave: chave, gira_id: giraIdAttr })
-        });
-        const d = await res.json();
-        if (!d || d.status !== 'ok') {
-          renderOwned(card);
-          showToast(d?.mensagem || 'Erro ao desistir', '#dc3545');
-        } else {
-          showToast(d.mensagem || 'Função liberada', '#0dcaf0');
-        }
-      } catch (err) {
-        console.error('Desistir erro:', err);
-        renderOwned(card);
-        showToast('Erro de rede ao desistir', '#dc3545');
-      }
-      return;
-    }
-
-    // CLIQUE NO NOME (botão .btn-nome-medium) — se for o próprio, é ação de desistir rápida
-    const btnNome = e.target.closest('.btn-nome-medium, .nome-medium-de-linha, .nome-pessoa');
-    if (btnNome) {
-      const chave = btnNome.dataset.chave ?? btnNome.closest('[data-funcao]')?.dataset.funcao;
-      const pessoaMediumId = btnNome.dataset.mediumId ?? btnNome.dataset.pessoaId;
-      // se clicou no próprio médium logado → tenta desistir
-      if (String(pessoaMediumId) === String(mediumId)) {
-        const card = document.querySelector(`[data-funcao="${chave}"]`);
-        if (!card) { showToast('Não encontrado', '#dc3545'); return; }
-        // enviar desistir
-        renderVacant(card, true);
-        showToast('Desistindo...', '#ffc107');
-        try {
-          const res = await fetch("{% url 'gira:desistir_funcao' %}", {
-            method: 'POST',
-            headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({ funcao_chave: chave, gira_id: currentGiraId })
-          });
-          const d = await res.json();
-          if (!d || d.status !== 'ok') {
-            renderOwned(card);
-            showToast(d?.mensagem || 'Erro ao desistir', '#dc3545');
-          } else {
-            showToast(d.mensagem || 'Função liberada', '#0dcaf0');
-          }
-        } catch (err) {
-          console.error('Desistir via nome erro:', err);
-          renderOwned(card);
-          showToast('Erro de rede ao desistir', '#dc3545');
-        }
-      } else {
-        // clicou em outro nome — apenas feedback
-        showToast('Função ocupada', '#6c757d');
-      }
+      fetch("{% url 'gira:desistir_funcao' %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({ funcao_id: funcaoId })
+      }).then(r => r.json())
+        .then(d => {
+          if (d.status !== 'ok') renderOwned(card);
+          showToast(d.mensagem || (d.status==='ok' ? 'Função liberada' : 'Erro ao desistir'), d.status==='ok' ? '#0dcaf0' : '#dc3545');
+        })
+        .catch(() => { renderOwned(card); showToast('Erro de rede ao desistir', '#dc3545'); });
     }
   });
 
-  // CARROSSEL
+  // =========================
+  // CARROSSEL DE GIRAS (setas & swipe)
+  // =========================
   const giras = {{ giras_json|safe }};
   let index = giras.findIndex(g => g.id === parseInt("{{ gira.id }}"));
 
@@ -778,6 +684,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!prevBtn || !nextBtn) return;
     prevBtn.disabled = (index <= 0);
     nextBtn.disabled = (index >= giras.length - 1);
+
+    // detecta tema atual a partir do texto na UI (padrão inicial)
     const linhaText = document.querySelector('#gira-linha')?.innerText ?? '';
     const isExuNow = /exu/i.test(linhaText || '');
     aplicarCoresBotoes(isExuNow);
@@ -789,18 +697,19 @@ document.addEventListener('DOMContentLoaded', () => {
       index = novo;
       const proxima = giras[index];
 
-      // atualiza header IMEDIATAMENTE
+      // Atualiza IMEDIATAMENTE data e linha (header)
       const dataEl = document.querySelector('#gira-data');
       const linhaEl = document.querySelector('#gira-linha');
-      if (dataEl && proxima.data_hora) dataEl.innerText = new Date(proxima.data_hora).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' });
+      if (dataEl && proxima.data_hora) {
+        dataEl.innerText = new Date(proxima.data_hora).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' });
+      }
       if (linhaEl && proxima.linha) linhaEl.innerText = proxima.linha;
 
-      // atualiza tema IMEDIATAMENTE
+      // aplica cores do tema IMEDIATAMENTE também
       const isExu = /exu/i.test(proxima.linha || '');
       if (navbar) navbar.style.background = isExu
-        ? 'linear-gradient(to right,#000000,#4d0000,#990000)'
-        : 'linear-gradient(to right,#002147,#6e9cb9,#A4D2E8)';
-
+        ? 'linear-gradient(to right, #000000, #4d0000, #990000)'
+        : 'linear-gradient(to right, #002147, #6e9cb9, #A4D2E8)';
       const corAtiva = isExu ? '#b00000' : '#0072bb';
       const corSec = isExu ? '#660000' : '#cccccc';
       if (dataEl) dataEl.style.color = isExu ? '#ff4d4d' : '#0072bb';
@@ -812,10 +721,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (titleOrg) titleOrg.style.color = corAtiva;
       if (titleLimpeza) titleLimpeza.style.color = corAtiva;
 
+      // atualiza cores dos botões
       aplicarCoresBotoes(isExu);
+
       atualizarBotoes();
 
-      // carrega os dados completos em background
+      // Carrega os cards em background (loader aparecerá se demorar)
       window.carregarGira(proxima.id);
     }
   }
@@ -825,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.addEventListener('click', () => navegar(1));
   }
 
-  // swipe mobile
+  // Swipe mobile
   let touchStartX = 0;
   document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
   document.addEventListener('touchend', e => {
@@ -835,11 +746,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // inicialização
+  // inicializa botoes com o tema atual
   atualizarBotoes();
   console.info('[script] inicializado');
 });
 </script>
-
 
 {% endblock %}
