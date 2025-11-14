@@ -15,6 +15,8 @@ urlpatterns = [
     path('funcoes_dev/', views.lista_funcoes_dev, name='lista_funcoes_dev'),
     path('funcoes_dev/<int:gira_id>/', views.lista_funcoes_dev, name='lista_funcoes_dev_by_id'),
     path("funcoes_dev/data/<int:gira_id>/", views.get_gira_data, name="get_gira_data"),
+    path('assumir_funcao_dev/', views.assumir_funcao_dev, name='assumir_funcao_dev'),
+    path('desistir_funcao_dev/', views.desistir_funcao_dev, name='desistir_funcao_dev'),
 
 
 ]
