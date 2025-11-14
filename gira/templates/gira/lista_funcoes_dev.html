@@ -98,20 +98,57 @@
 
   <div id="organizacao-container" class="row g-3">
     {% for f in organizacao %}
-      <div id="card-{{ f.chave }}" data-funcao="{{ f.chave }}" data-pessoa="{{ f.pessoa.id|default:'' }}" class="col-6 col-md-4 col-lg-3">
-        <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
+      <div id="card-{{ f.chave }}" 
+           data-funcao="{{ f.chave }}" 
+           data-pessoa="{{ f.pessoa.id|default:'' }}" 
+           class="col-6 col-md-4 col-lg-3">
+
+        <div class="card border-0 shadow-sm 
+             {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} 
+             h-100 position-relative">
+
           {% if f.status|lower == 'vaga' %}
-            <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>
+            <span class="badge bg-danger position-absolute"
+                  style="right:10px; top:10px; font-size:0.7rem;">Vago</span>
           {% endif %}
+
           <div class="card-body p-3 text-start">
-            <div class="fw-semibold text-dark" style="font-size:0.95rem;">{{ f.descricao|default:f.tipo }}</div>
-            <div class="text-muted" style="font-size:0.85rem;">
-              {% if f.status|lower == 'vaga' %}
-                <button class="btn btn-sm btn-success btn-assumir" data-funcao="{{ f.id }}" style="font-size:0.8rem;">Assumir</button>
-              {% else %}
-                <span class="nome-medium" data-medium-id="{{ f.pessoa.id|default:'' }}">{{ f.pessoa.nome|default:"—" }}</span>
-              {% endif %}
+            <div class="fw-semibold text-dark" style="font-size:0.95rem;">
+              {{ f.descricao|default:f.tipo }}
             </div>
+
+            <div class="text-muted" style="font-size:0.85rem;">
+              
+              {% if f.status|lower == 'vaga' %}
+                {% if pode_assumir %}
+                  <button class="btn btn-sm btn-success btn-assumir"
+                    data-funcao="{{ f.id }}"
+                    data-chave="{{ f.chave }}"
+                    data-gira-id="{{ gira.id }}"
+                    style="font-size:0.8rem;">Assumir</button>
+                {% else %}
+                  <span>—</span>
+                {% endif %}
+
+              {% else %}
+                <span class="nome-medium" data-medium-id="{{ f.pessoa.id|default:'' }}">
+                  {{ f.pessoa.nome|default:"—" }}
+                </span>
+
+                {% if pode_assumir %}
+                    <br>
+                    <button class="btn btn-sm btn-danger btn-desistir"
+                      data-funcao="{{ f.id }}"
+                      data-chave="{{ f.chave }}"
+                      data-gira-id="{{ gira.id }}"
+                      style="font-size:0.8rem; margin-top:4px;">
+                      Desistir
+                    </button>
+                {% endif %}
+              {% endif %}
+
+            </div>
+
           </div>
         </div>
       </div>
@@ -119,7 +156,9 @@
   </div>
 </section>
 
-<hr id="sep-3" class="my-4" style="border-color:{% if tema == 'exu' %}#660000{% else %}#ccc{% endif %};">
+<hr id="sep-3" class="my-4" 
+    style="border-color:{% if tema == 'exu' %}#660000{% else %}#ccc{% endif %};">
+
 
 <!-- BLOCO LIMPEZA -->
 <section class="mb-5">
@@ -131,20 +170,57 @@
 
   <div id="limpeza-container" class="row g-3">
     {% for f in limpeza %}
-      <div id="card-{{ f.chave }}" data-funcao="{{ f.chave }}" data-pessoa="{{ f.pessoa.id|default:'' }}" class="col-6 col-md-4 col-lg-3">
-        <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
+      <div id="card-{{ f.chave }}" 
+           data-funcao="{{ f.chave }}" 
+           data-pessoa="{{ f.pessoa.id|default:'' }}" 
+           class="col-6 col-md-4 col-lg-3">
+
+        <div class="card border-0 shadow-sm 
+             {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} 
+             h-100 position-relative">
+
           {% if f.status|lower == 'vaga' %}
-            <span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>
+            <span class="badge bg-danger position-absolute"
+                  style="right:10px; top:10px; font-size:0.7rem;">Vago</span>
           {% endif %}
+
           <div class="card-body p-3 text-start">
-            <div class="fw-semibold text-dark" style="font-size:0.95rem;">Limpeza</div>
-            <div class="text-muted" style="font-size:0.85rem;">
-              {% if f.status|lower == 'vaga' %}
-                <button class="btn btn-sm btn-success btn-assumir" data-funcao="{{ f.id }}" style="font-size:0.8rem;">Assumir</button>
-              {% else %}
-                <span class="nome-medium" data-medium-id="{{ f.pessoa.id|default:'' }}">{{ f.pessoa.nome|default:"—" }}</span>
-              {% endif %}
+            <div class="fw-semibold text-dark" style="font-size:0.95rem;">
+              Limpeza
             </div>
+
+            <div class="text-muted" style="font-size:0.85rem;">
+
+              {% if f.status|lower == 'vaga' %}
+                {% if pode_assumir %}
+                  <button class="btn btn-sm btn-success btn-assumir"
+                    data-funcao="{{ f.id }}"
+                    data-chave="{{ f.chave }}"
+                    data-gira-id="{{ gira.id }}"
+                    style="font-size:0.8rem;">Assumir</button>
+                {% else %}
+                  <span>—</span>
+                {% endif %}
+
+              {% else %}
+                <span class="nome-medium" data-medium-id="{{ f.pessoa.id|default:'' }}">
+                  {{ f.pessoa.nome|default:"—" }}
+                </span>
+
+                {% if pode_assumir %}
+                  <br>
+                  <button class="btn btn-sm btn-danger btn-desistir"
+                    data-funcao="{{ f.id }}"
+                    data-chave="{{ f.chave }}"
+                    data-gira-id="{{ gira.id }}"
+                    style="font-size:0.8rem; margin-top:4px;">
+                    Desistir
+                  </button>
+                {% endif %}
+              {% endif %}
+
+            </div>
+
           </div>
         </div>
       </div>
