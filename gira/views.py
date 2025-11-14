@@ -268,7 +268,97 @@ from django.db.models import Q
 from .models import Gira, Funcao, Medium, Historico, User, GiraFuncaoHistorico
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from django.utils import timezone
 
+# -------------------------------------------------------------------
+# 🔹 NOVOS Endpoints AJAX: DESENVOLVIMENTO
+# -------------------------------------------------------------------
+# (Estas views usam GiraFuncaoHistorico e checam a data)
+
+@require_POST
+@csrf_exempt
+def assumir_funcao_dev(request):
+    sess_user_id = request.session.get('user_id')
+    if not sess_user_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}, status=401)
+
+    # O JS desta template envia a 'funcao_chave'
+    funcao_chave = request.POST.get('funcao_chave') 
+    if not funcao_chave:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Chave da função ausente.'}, status=400)
+
+    try:
+        medium = Medium.objects.get(user_id=sess_user_id)
+    except Medium.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado.'}, status=404)
+
+    try:
+        # 1. Busca no modelo 'GiraFuncaoHistorico'
+        funcao = GiraFuncaoHistorico.objects.select_related('gira').get(chave=funcao_chave)
+    except GiraFuncaoHistorico.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Função (dev) inexistente.'}, status=404)
+
+    # 2. Checagem de data (regra de negócio)
+    hoje = timezone.localdate()
+    if funcao.gira.data_hora.date() < hoje:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Não é permitido assumir funções de giras passadas.'}, status=403)
+
+    if funcao.pessoa_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Esta função já foi assumida.'}, status=409)
+
+    if (funcao.tipo or '').lower().startswith('cambone'):
+        return JsonResponse({'status': 'erro', 'mensagem': 'Não é permitido assumir cambones via UI.'}, status=403)
+
+    funcao.pessoa_id = medium.id
+    funcao.status = 'Preenchida'
+    funcao.save()
+
+    return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}', 'funcao_id': funcao.id})
+
+
+@require_POST
+@csrf_exempt
+def desistir_funcao_dev(request):
+    sess_user_id = request.session.get('user_id')
+    if not sess_user_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Usuário não autenticado.'}, status=401)
+
+    # O JS desta template envia o 'funcao_id'
+    funcao_id = request.POST.get('funcao_id')
+    if not funcao_id:
+        return JsonResponse({'status': 'erro', 'mensagem': 'ID da função ausente.'}, status=400)
+
+    try:
+        medium = Medium.objects.get(user_id=sess_user_id)
+    except Medium.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Médium não encontrado.'}, status=404)
+
+    try:
+        # 1. Busca no modelo 'GiraFuncaoHistorico'
+        funcao = GiraFuncaoHistorico.objects.select_related('gira').get(id=funcao_id)
+    except GiraFuncaoHistorico.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Função (dev) inexistente.'}, status=404)
+
+    # 2. Checagem de data (regra de negócio)
+    hoje = timezone.localdate()
+    if funcao.gira.data_hora.date() < hoje:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Não é permitido desistir de funções de giras passadas.'}, status=403)
+
+    if funcao.pessoa_id != medium.id:
+        # (Opcional: permitir superuser desistir por outros)
+        user = _get_user(request) # Assume que _get_user() está disponível
+        if not getattr(user, "is_superuser", False):
+             return JsonResponse({'status': 'erro', 'mensagem': 'Você não é responsável por esta função.'}, status=403)
+
+    funcao.pessoa_id = None
+    funcao.status = 'Vaga'
+    funcao.save()
+
+    return JsonResponse({'status': 'ok', 'mensagem': f'Função liberada.', 'funcao_id': funcao.id})
+
+# -------------------------------------------------------------------
+# 🔹 View da lista funções em desenvolvimento (AJUSTADA)
+# -------------------------------------------------------------------
 def lista_funcoes_dev(request, gira_id=None):
     """
     Página de desenvolvimento /funcoes_dev/
@@ -356,17 +446,38 @@ def lista_funcoes_dev(request, gira_id=None):
     giras = list(Gira.objects.all().order_by('data_hora').values('id', 'data_hora', 'linha'))
     giras_json = json.dumps(giras, cls=DjangoJSONEncoder)
 
+    # --- 📌 INÍCIO DAS ALTERAÇÕES NO CONTEXTO 📌 ---
+
+    # 1. Definir a permissão base (se o usuário é médium/superuser)
+    tem_permissao_base = user.is_superuser and medium_logado is not None
+
+    # 2. Checar a data da gira atual (para a primeira carga)
+    hoje = timezone.localdate()
+    is_gira_futura_ou_hoje = False 
+    if gira:
+        is_gira_futura_ou_hoje = gira.data_hora.date() >= hoje
+
+    # 3. Definir a permissão final (para a carga inicial do HTML)
+    pode_assumir_final = tem_permissao_base and is_gira_futura_ou_hoje
+
     contexto = {
         'user': user,
         'sess_user_id': user.id,
         'medium_logado': medium_logado,
         'gira': gira,
         'cambones': cambones,
-        'organizacao': organizacao_ordered,
+        'organizacao': organizacao_ordered, # (usando seu nome de var)
         'limpeza': limpeza,
         'tema': tema,
         'giras_json': giras_json,
+        
+        # --- ⬇️ ADICIONE ESTAS DUAS LINHAS ⬇️ ---
+        'tem_permissao_base': tem_permissao_base,
+        'pode_assumir': pode_assumir_final,
     }
+    # --- 🏁 FIM DAS ALTERAÇÕES 🏁 ---
+
+    
     return render(request, 'gira/lista_funcoes_dev.html', contexto)
 
 
