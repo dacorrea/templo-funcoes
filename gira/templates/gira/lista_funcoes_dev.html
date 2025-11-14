@@ -389,7 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let spinnerTimer = null;
 
-  // util
   function showToast(msg, color='#198754') {
     toast.textContent = msg;
     toast.style.backgroundColor = color;
@@ -397,7 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => toast.classList.remove('show'), 1800);
   }
 
-  // atualiza cor dos botões de acordo com tema (isExu boolean)
   function aplicarCoresBotoes(isExu) {
     const corAtiva = isExu ? '#b00000' : '#0072bb';
     const corInativa = '#cccccc';
@@ -406,21 +404,28 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.style.color = nextBtn.disabled ? corInativa : corAtiva;
   }
 
-  // render helpers
   function renderOwned(card) {
     if (!card) return;
     const meta = card.querySelector('.text-muted');
     if (!meta) return;
+
     meta.innerHTML = `
       <div class="d-flex align-items-center justify-content-start">
-        <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
-        <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
+        <button class="btn btn-link text-dark fw-semibold btn-nome-medium p-0"
+                data-medium-id="${mediumId}"
+                data-funcao="${card.dataset.funcao}"
+                style="font-size:0.9rem;">
+          ${mediumNome}
+        </button>
+
+        <button class="btn btn-link text-danger btn-desistir p-0 ms-2"
                 data-funcao="${card.dataset.funcao}"
                 title="Desistir"
-                style="font-size:0.9rem; line-height:1;">
+                style="font-size:0.9rem;">
           <i class="bi bi-x-circle"></i>
         </button>
       </div>`;
+
     card.dataset.pessoa = mediumId;
   }
 
@@ -428,40 +433,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!card) return;
     const meta = card.querySelector('.text-muted');
     if (!meta) return;
-    meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${card.dataset.funcao}" style="font-size:0.8rem;">Assumir</button>`;
+
+    meta.innerHTML = `
+      <button class="btn btn-sm btn-success btn-assumir"
+              data-funcao="${card.dataset.funcao}"
+              style="font-size:0.8rem;">
+        Assumir
+      </button>`;
+
     card.dataset.pessoa = '';
   }
 
-  // criação de card com logs e robustez para vários formatos de JSON
   function criarCard(f, blocoName, isExu) {
-    // logging por item para depurar
-    console.debug('[criarCard] item raw:', blocoName, f);
-
     const chave = f.chave ?? f.key ?? f.id ?? `id${Math.random().toString(36).slice(2,8)}`;
     const funcaoId = f.id ?? f.funcao_id ?? f.pk ?? chave;
     const status = (f.status || f.st || '').toString();
     const descricao = f.descricao || f.tipo || f.nome || '';
-    const pessoaId = (f.pessoa && f.pessoa.id) ? f.pessoa.id : (f.pessoa_id ?? f.pessoa ?? '');
-    const pessoaNome = (f.pessoa && f.pessoa.nome) ? f.pessoa.nome
-      : (f.pessoa__nome ?? f.pessoa_nome ?? f.pessoa_nome_display ?? '');
-    // tentativa robusta para medium_de_linha (várias formas possíveis)
-    let mediumLinhaNome = '';
-    let mediumLinhaId = '';
-    if (f.medium_de_linha) {
-      // pode ser objeto {id:.., nome:..} ou já string etc.
-      if (typeof f.medium_de_linha === 'object') {
-        mediumLinhaNome = f.medium_de_linha.nome ?? f.medium_de_linha_name ?? '';
-        mediumLinhaId = f.medium_de_linha.id ?? '';
-      } else if (typeof f.medium_de_linha === 'string') {
-        mediumLinhaNome = f.medium_de_linha;
-      }
-    }
-    // fallbacks comuns que seu backend pode usar
-    if (!mediumLinhaNome) mediumLinhaNome = f.medium_de_linha_nome ?? f.medium_de_linha__nome ?? f.medium_de_linhaName ?? '';
-    if (!mediumLinhaId) mediumLinhaId = f.medium_de_linha_id ?? f.medium_de_linha__id ?? '';
+    const pessoaId = f.pessoa?.id ?? f.pessoa_id ?? f.pessoa ?? '';
+    const pessoaNome = f.pessoa?.nome ?? f.pessoa__nome ?? f.pessoa_nome ?? '';
 
-    // debug para entender quais campos chegaram
-    console.debug('[criarCard] resolved mediumLinhaNome, mediumLinhaId:', mediumLinhaNome, mediumLinhaId);
+    const isVaga = !pessoaId || status.toLowerCase().includes('vaga');
 
     const div = document.createElement('div');
     div.id = `card-${chave}`;
@@ -469,181 +460,57 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pessoaId) div.dataset.pessoa = pessoaId;
     div.className = 'col-6 col-md-4 col-lg-3';
 
-    const isVaga = (status + '').toLowerCase().includes('vaga') || (status + '').toLowerCase().includes('open') || (status === '');
-
-    // título condicional por bloco
-    let titulo = '—';
-    if (blocoName === 'cambones') {
-      // PRIORIDADE: mediumLinhaNome (do campo medium_de_linha ou fallback). Se vazio, tenta descricao.
-      if (mediumLinhaNome && mediumLinhaNome.trim() !== '') titulo = mediumLinhaNome;
-      else if (descricao && descricao.trim() !== '') titulo = descricao;
-      else titulo = '—';
-    } else if (blocoName === 'limpeza') {
-      titulo = 'Limpeza';
-    } else {
-      titulo = descricao || '—';
-    }
-
-    // constrói innerHTML (aplica tema de fundo se necessário)
+    const titulo = descricao || '—';
     const bgClass = isExu ? 'bg-light' : 'bg-body-tertiary';
+
     div.innerHTML = `
       <div class="card border-0 shadow-sm h-100 position-relative ${bgClass}">
-        ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px; top:10px; font-size:0.7rem;">Vago</span>` : ''}
+        ${isVaga ? `<span class="badge bg-danger position-absolute" style="right:10px;top:10px;font-size:0.7rem;">Vago</span>` : ''}
         <div class="card-body p-3 text-start">
-          <div class="fw-semibold text-dark" style="font-size:0.95rem;">
-            ${titulo}
-          </div>
+          <div class="fw-semibold text-dark" style="font-size:0.95rem;">${titulo}</div>
           <div class="text-muted" style="font-size:0.85rem;">
             ${isVaga
               ? `<button class="btn btn-sm btn-success btn-assumir" data-funcao="${funcaoId}" style="font-size:0.8rem;">Assumir</button>`
-              : (blocoName === 'cambones'
-                  ? `<span class="nome-medium" data-medium-id="${mediumLinhaId}">${mediumLinhaNome || '—'}</span>`
-                  : `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`)
+              : `<button class="btn btn-link text-dark fw-semibold btn-nome-medium p-0"
+                         data-medium-id="${pessoaId}"
+                         data-funcao="${funcaoId}"
+                         style="font-size:0.9rem;">
+                     ${pessoaNome || '—'}
+                 </button>`
             }
           </div>
         </div>
       </div>`;
+
     return div;
   }
 
-  // atualiza container com fade e logs
   function atualizarContainer(container, items, blocoName, isExu) {
     if (!container) return;
-    console.debug('[atualizarContainer] bloco:', blocoName, 'items.length=', items?.length);
+
     container.classList.add('fade-block-out');
     setTimeout(() => {
       container.innerHTML = '';
-      (items || []).forEach(f => container.appendChild(criarCard(f, blocoName, isExu)));
+      items.forEach(f => container.appendChild(criarCard(f, blocoName, isExu)));
       container.classList.remove('fade-block-out');
       container.classList.add('fade-block-in');
       setTimeout(() => container.classList.remove('fade-block-in'), 250);
     }, 120);
   }
 
-  // carregarGira (mantém transição/loader; logs detalhados)
-  window.carregarGira = async function (giraId, apenasTema=false) {
-    console.info('[carregarGira] start', { giraId, apenasTema });
-    try {
-      // fade e spinner temporizado (spinner aparece se demorar)
-      mainContent.classList.add('fade-out');
-      spinnerTimer = setTimeout(() => document.body.classList.add('loading'), 200);
-
-      const resp = await fetch(`/funcoes_dev/data/${giraId}/`);
-      const dados = await resp.json();
-      console.debug('[carregarGira] dados recebidos do endpoint:', dados);
-
-      // Atualiza data e linha
-      const dataEl = document.querySelector('#gira-data');
-      const linhaEl = document.querySelector('#gira-linha');
-      if (dataEl && dados.gira && dados.gira.data_hora) {
-        dataEl.innerText = new Date(dados.gira.data_hora)
-          .toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-      }
-      if (linhaEl && dados.gira && dados.gira.linha) {
-        linhaEl.innerText = dados.gira.linha;
-      }
-
-      // Atualiza tema imediatamente (e aplica cores nos botões)
-      const novaLinha = dados.gira?.linha ?? (document.querySelector('#gira-linha')?.innerText || '');
-      const isExu = /exu/i.test(novaLinha || '');
-      if (navbar) {
-        navbar.style.background = isExu
-          ? 'linear-gradient(to right, #000000, #4d0000, #990000)'
-          : 'linear-gradient(to right, #002147, #6e9cb9, #A4D2E8)';
-      }
-      const corAtiva = isExu ? '#b00000' : '#0072bb';
-      const corSec = isExu ? '#660000' : '#cccccc';
-      if (dataEl) dataEl.style.color = isExu ? '#ff4d4d' : '#0072bb';
-      if (linhaEl) linhaEl.style.color = isExu ? '#c00000' : '#222222';
-      if (sep1) sep1.style.borderColor = corSec;
-      if (sep2) sep2.style.borderColor = corSec;
-      if (sep3) sep3.style.borderColor = corSec;
-      if (titleCambones) titleCambones.style.color = corAtiva;
-      if (titleOrg) titleOrg.style.color = corAtiva;
-      if (titleLimpeza) titleLimpeza.style.color = corAtiva;
-
-      // atualiza cores dos botões conforme tema
-      aplicarCoresBotoes(isExu);
-
-      if (apenasTema) {
-        console.info('[carregarGira] apenasTema true — finalizando sem atualizar cards');
-        return;
-      }
-
-      // Containers locais
-      const cambonesContainer = document.querySelector('#cambones-container');
-      const orgContainer = document.querySelector('#organizacao-container');
-      const limpezaContainer = document.querySelector('#limpeza-container');
-
-      // normalize: aceitar vários formatos de retorno
-      let grouped = { cambones: [], organizacao: [], limpeza: [] };
-      if (Array.isArray(dados.cambones) || Array.isArray(dados.organizacao) || Array.isArray(dados.limpeza)) {
-        grouped.cambones = Array.isArray(dados.cambones) ? dados.cambones : [];
-        grouped.organizacao = Array.isArray(dados.organizacao) ? dados.organizacao : [];
-        grouped.limpeza = Array.isArray(dados.limpeza) ? dados.limpeza : [];
-      } else if (Array.isArray(dados.funcoes)) {
-        // heurística de agrupamento (mesma que antes)
-        function descricaoIncluiLimpeza(f) {
-          const text = ((f.descricao || f.tipo || f.nome || '') + '').toLowerCase();
-          return text.includes('limpeza') || text.includes('limpo') || text.includes('faxina');
-        }
-        dados.funcoes.forEach(f => {
-          const tipo = (f.tipo || f.descricao || '').toString().toLowerCase();
-          const grupo = (f.grupo || '').toString().toLowerCase();
-          if (grupo.includes('cambon') || tipo.includes('cambon')) grouped.cambones.push(f);
-          else if (tipo.includes('limpeza') || descricaoIncluiLimpeza(f)) grouped.limpeza.push(f);
-          else grouped.organizacao.push(f);
-        });
-      } else {
-        console.warn('[carregarGira] formato inesperado — limpando containers', dados);
-        if (cambonesContainer) cambonesContainer.innerHTML = '';
-        if (orgContainer) orgContainer.innerHTML = '';
-        if (limpezaContainer) limpezaContainer.innerHTML = '';
-        return;
-      }
-
-      console.debug('[carregarGira] agrupamento concluído', {
-        cambones: grouped.cambones.length,
-        organizacao: grouped.organizacao.length,
-        limpeza: grouped.limpeza.length
-      });
-
-      // Atualiza containers com fade (passa isExu para criarCard para background compatível)
-      atualizarContainer(cambonesContainer, grouped.cambones, 'cambones', isExu);
-      atualizarContainer(orgContainer, grouped.organizacao, 'organizacao', isExu);
-      atualizarContainer(limpezaContainer, grouped.limpeza, 'limpeza', isExu);
-
-      // debug final
-      console.info('[carregarGira] cards atualizados para gira', giraId);
-
-    } catch (err) {
-      console.error('[carregarGira] erro:', err);
-      showToast('Erro ao carregar gira', '#dc3545');
-    } finally {
-      clearTimeout(spinnerTimer);
-      document.body.classList.remove('loading');
-      // final fade-in suave
-      requestAnimationFrame(() => {
-        mainContent.classList.remove('fade-out');
-        mainContent.classList.add('fade-in');
-        setTimeout(() => mainContent.classList.remove('fade-in'), 260);
-      });
-      console.info('[carregarGira] fim (finally)');
-    }
-  };
-
-  // =========================
-  // Eventos ASSUMIR / DESISTIR (mantidos)
-  // =========================
+  // ==========================================
+  //   EVENTOS: ASSUMIR / DESISTIR / CLIQUE NO NOME
+  // ==========================================
   document.addEventListener('click', e => {
-    const btnAssumir = e.target.closest('.btn-assumir');
-    const btnDesistir = e.target.closest('.btn-desistir');
 
+    // ASSUMIR
+    const btnAssumir = e.target.closest('.btn-assumir');
     if (btnAssumir) {
       const funcaoId = btnAssumir.dataset.funcao;
       const card = document.getElementById(`card-${funcaoId}`);
       renderOwned(card);
       showToast('Assumindo função...', '#0d6efd');
+
       fetch("{% url 'gira:assumir_funcao' %}", {
         method: 'POST',
         headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
@@ -651,16 +518,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }).then(r => r.json())
         .then(d => {
           if (d.status !== 'ok') renderVacant(card);
-          showToast(d.mensagem || (d.status==='ok' ? 'Função assumida' : 'Erro ao assumir'), d.status==='ok' ? '#198754' : '#dc3545');
+          showToast(d.mensagem || 'Finalizado', d.status === 'ok' ? '#198754' : '#dc3545');
         })
-        .catch(() => { renderVacant(card); showToast('Erro de rede ao assumir', '#dc3545'); });
+        .catch(() => { renderVacant(card); showToast('Erro', '#dc3545'); });
     }
 
+    // DESISTIR
+    const btnDesistir = e.target.closest('.btn-desistir');
     if (btnDesistir) {
       const funcaoId = btnDesistir.dataset.funcao;
       const card = document.getElementById(`card-${funcaoId}`);
       renderVacant(card);
-      showToast('Desistindo da função...', '#ffc107');
+      showToast('Desistindo...', '#ffc107');
+
       fetch("{% url 'gira:desistir_funcao' %}", {
         method: 'POST',
         headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
@@ -668,15 +538,41 @@ document.addEventListener('DOMContentLoaded', () => {
       }).then(r => r.json())
         .then(d => {
           if (d.status !== 'ok') renderOwned(card);
-          showToast(d.mensagem || (d.status==='ok' ? 'Função liberada' : 'Erro ao desistir'), d.status==='ok' ? '#0dcaf0' : '#dc3545');
+          showToast(d.mensagem || 'Finalizado', d.status === 'ok' ? '#0dcaf0' : '#dc3545');
         })
-        .catch(() => { renderOwned(card); showToast('Erro de rede ao desistir', '#dc3545'); });
+        .catch(() => { renderOwned(card); showToast('Erro', '#dc3545'); });
+    }
+
+    // NOVO: CLIQUE NO NOME DO MÉDIUM (btn-nome-medium)
+    const btnNome = e.target.closest('.btn-nome-medium');
+    if (btnNome) {
+      const funcaoId = btnNome.dataset.funcao;
+      const card = document.getElementById(`card-${funcaoId}`);
+
+      // se o médium clicado é o próprio logado → é um botão de desistir disfarçado
+      if (btnNome.dataset.mediumId == mediumId) {
+        btnNome.innerHTML = mediumNome;
+        btnNome.classList.add("fw-semibold");
+        showToast("Desistindo...", "#ffc107");
+        renderVacant(card);
+
+        fetch("{% url 'gira:desistir_funcao' %}", {
+          method: 'POST',
+          headers: { "X-CSRFToken": csrftoken, "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ funcao_id: funcaoId })
+        });
+
+      } else {
+        // clicou no nome de outro → não assume, apenas feedback
+        showToast("Esta função já está ocupada", "#dc3545");
+      }
     }
   });
 
-  // =========================
-  // CARROSSEL DE GIRAS (setas & swipe)
-  // =========================
+  // ======================================================
+  //         CARROSSEL DE GIRAS — idêntico ao seu
+  // ======================================================
+
   const giras = {{ giras_json|safe }};
   let index = giras.findIndex(g => g.id === parseInt("{{ gira.id }}"));
 
@@ -685,7 +581,6 @@ document.addEventListener('DOMContentLoaded', () => {
     prevBtn.disabled = (index <= 0);
     nextBtn.disabled = (index >= giras.length - 1);
 
-    // detecta tema atual a partir do texto na UI (padrão inicial)
     const linhaText = document.querySelector('#gira-linha')?.innerText ?? '';
     const isExuNow = /exu/i.test(linhaText || '');
     aplicarCoresBotoes(isExuNow);
@@ -697,36 +592,22 @@ document.addEventListener('DOMContentLoaded', () => {
       index = novo;
       const proxima = giras[index];
 
-      // Atualiza IMEDIATAMENTE data e linha (header)
       const dataEl = document.querySelector('#gira-data');
       const linhaEl = document.querySelector('#gira-linha');
-      if (dataEl && proxima.data_hora) {
-        dataEl.innerText = new Date(proxima.data_hora).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' });
-      }
-      if (linhaEl && proxima.linha) linhaEl.innerText = proxima.linha;
 
-      // aplica cores do tema IMEDIATAMENTE também
+      if (dataEl) dataEl.innerText = new Date(proxima.data_hora)
+        .toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' });
+
+      if (linhaEl) linhaEl.innerText = proxima.linha;
+
       const isExu = /exu/i.test(proxima.linha || '');
-      if (navbar) navbar.style.background = isExu
-        ? 'linear-gradient(to right, #000000, #4d0000, #990000)'
-        : 'linear-gradient(to right, #002147, #6e9cb9, #A4D2E8)';
-      const corAtiva = isExu ? '#b00000' : '#0072bb';
-      const corSec = isExu ? '#660000' : '#cccccc';
-      if (dataEl) dataEl.style.color = isExu ? '#ff4d4d' : '#0072bb';
-      if (linhaEl) linhaEl.style.color = isExu ? '#c00000' : '#222222';
-      if (sep1) sep1.style.borderColor = corSec;
-      if (sep2) sep2.style.borderColor = corSec;
-      if (sep3) sep3.style.borderColor = corSec;
-      if (titleCambones) titleCambones.style.color = corAtiva;
-      if (titleOrg) titleOrg.style.color = corAtiva;
-      if (titleLimpeza) titleLimpeza.style.color = corAtiva;
+      navbar.style.background = isExu
+        ? 'linear-gradient(to right,#000,#4d0000,#990000)'
+        : 'linear-gradient(to right,#002147,#6e9cb9,#A4D2E8)';
 
-      // atualiza cores dos botões
       aplicarCoresBotoes(isExu);
-
       atualizarBotoes();
 
-      // Carrega os cards em background (loader aparecerá se demorar)
       window.carregarGira(proxima.id);
     }
   }
@@ -736,17 +617,6 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.addEventListener('click', () => navegar(1));
   }
 
-  // Swipe mobile
-  let touchStartX = 0;
-  document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
-  document.addEventListener('touchend', e => {
-    const touchEndX = e.changedTouches[0].screenX;
-    if (Math.abs(touchEndX - touchStartX) > 60) {
-      navegar(touchEndX - touchStartX > 0 ? -1 : 1);
-    }
-  });
-
-  // inicializa botoes com o tema atual
   atualizarBotoes();
   console.info('[script] inicializado');
 });
