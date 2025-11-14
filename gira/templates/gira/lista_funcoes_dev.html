@@ -412,27 +412,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- 2. HELPERS DE RENDERIZAÇÃO OTIMISTA ---
-  function renderOwned(card) {
-    if (!card) return;
-    const meta = card.querySelector('.text-muted');
-    if (!meta) return;
+ // --- 2. HELPERS DE RENDERIZAÇÃO OTIMISTA ---
+function renderOwned(card) {
+    if (!card) return;
+    const meta = card.querySelector('.text-muted');
+    if (!meta) return;
     
     const funcaoChave = card.dataset.funcao; 
     const funcaoId = card.dataset.funcaoId;
 
-    meta.innerHTML = `
-      <div class="d-flex align-items-center justify-content-start">
-        <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
-        <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
-                data-funcao="${funcaoId}"  
-              data-chave="${funcaoChave}" 
-                title="Desistir"
-                style="font-size:0.9rem; line-height:1;">
-          <i class="bi bi-x-circle"></i>
-        </button>
-      </div>`;
-    card.dataset.pessoa = mediumId;
-  }
+    // CORREÇÃO: Usar o estilo discreto que você deseja
+    meta.innerHTML = `
+      <div class="d-flex align-items-center justify-content-start">
+        <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
+        <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
+                data-funcao="${funcaoId}"  
+                data-chave="${funcaoChave}"  
+                title="Desistir"
+                style="font-size:0.9rem; line-height:1;">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </div>`;
+    card.dataset.pessoa = mediumId;
+}
+// ------------------------------------------
 
   function renderVacant(card) {
     if (!card) return;
@@ -520,15 +523,19 @@ function criarCard(f, blocoName, isExu, isGiraFuturaOuHoje) {
           metaContent = `<span>—</span>`;
         }
       } else {
+        // Se a função está OCUPADA (não vaga)
         metaContent = `<span class="nome-medium" data-medium-id="${pessoaId}">${pessoaNome || '—'}</span>`;
         
         if (podeMudarFuncao && pessoaId.toString() === mediumId) {
-          metaContent += `<br><button class="btn btn-sm btn-danger btn-desistir" 
-                              data-funcao="${funcaoId}" 
-                              data-chave="${chave}" 
-                              style="font-size:0.8rem; margin-top:4px;">
-                              Desistir
-                      </button>`;
+          // CORREÇÃO: Usa o ícone discreto
+          metaContent += `
+            <button class="btn btn-link text-danger btn-desistir p-0 ms-1"
+                    data-funcao="${funcaoId}"  
+                    data-chave="${chave}"  
+                    title="Desistir"
+                    style="font-size:0.9rem; line-height:1;">
+              <i class="bi bi-x-circle"></i>
+            </button>`;
         }
       }
     }
