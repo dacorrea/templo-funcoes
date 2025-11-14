@@ -322,7 +322,9 @@ def assumir_funcao_dev(request):
     funcao.status = 'Preenchida'
     funcao.save()
 
-    return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}', 'funcao_id': funcao.id})@require_POST
+    return JsonResponse({'status': 'ok', 'mensagem': f'Função assumida por {medium.nome}', 'funcao_id': funcao.id})
+    
+@require_POST
 @csrf_exempt
 def desistir_funcao_dev(request):
     sess_user_id = request.session.get('user_id')
