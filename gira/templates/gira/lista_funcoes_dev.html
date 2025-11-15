@@ -734,83 +734,90 @@ function criarCard(f, blocoName, isExu, isGiraFuturaOuHoje) {
     }
   };
 
-  // =========================
-  // --- 6. EVENTOS DE CLICK (ASSUMIR / DESISTIR) ---
-  // (Apontando para as novas URLs _dev)
-  // =========================
-  document.addEventListener('click', e => {
+ // =========================
+// --- 6. EVENTOS DE CLICK (ASSUMIR / DESISTIR) CORRIGIDOS ---
+// (Apontando para as URLs _dev e garantindo o envio do gira_id)
+// =========================
+document.addEventListener('click', e => {
     const btnAssumir = e.target.closest('.btn-assumir');
     const btnDesistir = e.target.closest('.btn-desistir');
 
     // --- AÇÃO DE ASSUMIR ---
     if (btnAssumir) {
-      const funcaoChave = btnAssumir.dataset.chave; 
-      const card = document.getElementById(`card-${funcaoChave}`);
-      
-      if (!card) {
-        console.error('Card não encontrado para assumir:', funcaoChave);
-        return;
-      }
-      renderOwned(card);
-      showToast('Assumindo função...', '#0d6efd');
+        const funcaoChave = btnAssumir.dataset.chave; 
+        const card = document.getElementById(`card-${funcaoChave}`);
+        
+        if (!card || !giraId) {
+            console.error('Dados incompletos para Assumir.', { funcaoChave, giraId });
+            showToast('Erro interno: dados incompletos.', '#dc3545');
+            return;
+        }
+        
+        // 1. Renderização otimista (mostra o estado "Preenchido" imediatamente)
+        renderOwned(card);
+        showToast('Assumindo função...', '#0d6efd');
 
-      if (!giraId) {
-    showToast('Erro interno: ID da Gira não encontrado.', '#dc3545');
-    return; // Interrompe a função
-}
-      
-      fetch("{% url 'gira:assumir_funcao_dev' %}", {
-    method: 'POST',
-    headers: {
-        'X-CSRFToken': csrftoken, 
-        'Content-Type':'application/x-www-form-urlencoded'
-    },
-    // CORREÇÃO: Adicionando o parâmetro gira_id
-    body: new URLSearchParams({ 
-        funcao_chave: funcaoChave,
-        gira_id: giraId // <--- NOVO PARÂMETRO ESSENCIAL
-    })
-}).then(r => r.json())
-  .then(d => {
-      // Se o status não for 'ok', significa que o backend teve uma falha de lógica (ex: função já ocupada)
-      if (d.status !== 'ok') renderVacant(card); 
-      
-      showToast(d.mensagem || (d.status==='ok' ? 'Função assumida' : 'Erro ao assumir'), d.status==='ok' ? '#198754' : '#dc3545');
-  })
-  .catch((error) => { // É bom logar o erro para depuração
-      console.error("Erro no fetch:", error);
-      renderVacant(card); 
-      showToast('Erro de rede ao assumir (Verifique o console)', '#dc3545'); 
-  });
-    }
+        // 2. Chamada ao Backend
+        fetch("{% url 'gira:assumir_funcao_dev' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken, 
+                'Content-Type':'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ 
+                funcao_chave: funcaoChave,
+                gira_id: giraId 
+            })
+        }).then(r => r.json())
+        .then(d => {
+            // 3. Reversão otimista em caso de erro no backend
+            if (d.status !== 'ok') renderVacant(card); 
+            
+            showToast(d.mensagem || (d.status==='ok' ? 'Função assumida' : 'Erro ao assumir'), d.status==='ok' ? '#198754' : '#dc3545');
+        })
+        .catch((error) => { 
+            console.error("Erro no fetch:", error);
+            renderVacant(card); 
+            showToast('Erro de rede ao assumir', '#dc3545'); 
+        });
+    }
 
     // --- AÇÃO DE DESISTIR ---
     if (btnDesistir) {
-      const funcaoId = btnDesistir.dataset.funcao; 
-      const funcaoChave = btnDesistir.dataset.chave; 
-      const card = document.getElementById(`card-${funcaoChave}`);
-      
-      if (!card) {
-        console.error('Card não encontrado para desistir:', funcaoChave);
-        return;
-      }
-      renderVacant(card); 
-      showToast('Desistindo da função...', '#ffc107');
-      
-      // *** USA A NOVA URL DE DESENVOLVIMENTO ***
-      fetch("{% url 'gira:desistir_funcao_dev' %}", {
-        method: 'POST',
-        headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({ funcao_id: funcaoId })
-      }).then(r => r.json())
-        .then(d => {
-          if (d.status !== 'ok') renderOwned(card); 
-          showToast(d.mensagem || (d.status==='ok' ? 'Função liberada' : 'Erro ao desistir'), d.status==='ok' ? '#0dcaf0' : '#dc3545');
-        })
-        .catch(() => { renderOwned(card); showToast('Erro de rede ao desistir', '#dc3545'); });
+        // A chave única da função na Gira está em data-chave do botão
+        const funcaoChave = btnDesistir.dataset.chave; 
+        const card = document.getElementById(`card-${funcaoChave}`);
+        
+        if (!card || !giraId) {
+            console.error('Dados incompletos para Desistir.', { funcaoChave, giraId });
+            showToast('Erro interno: dados incompletos.', '#dc3545');
+            return;
+        }
+        
+        // 1. Renderização otimista (mostra o estado "Vago" imediatamente)
+        renderVacant(card); 
+        showToast('Desistindo da função...', '#ffc107');
+        
+        // 2. Chamada ao Backend (Adicionando o ID da Gira)
+        fetch("{% url 'gira:desistir_funcao_dev' %}", {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken, 'Content-Type':'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({ 
+                funcao_chave: funcaoChave, // Envia a chave única da função na Gira
+                gira_id: giraId           // Essencial
+            })
+        }).then(r => r.json())
+            .then(d => {
+                // 3. Reversão otimista em caso de erro no backend
+                if (d.status !== 'ok') renderOwned(card); 
+                showToast(d.mensagem || (d.status==='ok' ? 'Função liberada' : 'Erro ao desistir'), d.status==='ok' ? '#0dcaf0' : '#dc3545');
+            })
+            .catch(() => { 
+                renderOwned(card); 
+                showToast('Erro de rede ao desistir', '#dc3545'); 
+            });
     }
-  });
-
+});
   // =========================
   // --- 7. CARROSSEL DE GIRAS (Navegação) ---
   // =========================
