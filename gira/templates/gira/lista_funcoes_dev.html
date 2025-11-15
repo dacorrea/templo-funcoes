@@ -417,17 +417,28 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.style.color = nextBtn.disabled ? corInativa : corAtiva;
   }
 
-  // --- 2. HELPERS DE RENDERIZAÇÃO OTIMISTA ---
- // --- 2. HELPERS DE RENDERIZAÇÃO OTIMISTA ---
+  // --- 2. HELPERS DE RENDERIZAÇÃO OTIMISTA ---// Pega o ID da Gira da tag com os dados (necessário para o botão Assumir)
+const giraId = document.getElementById('gira-data')?.dataset.giraId; 
+
+/**
+ * Renderiza o card no estado OCUPADO (com o nome do médium logado e o botão Desistir).
+ * Remove a tag 'Vago'.
+ */
 function renderOwned(card) {
     if (!card) return;
     const meta = card.querySelector('.text-muted');
-    if (!meta) return;
+    const innerCard = card.querySelector('.card');
+    if (!meta || !innerCard) return;
     
+    // Obtém os dados da função do card (data-* atributos)
     const funcaoChave = card.dataset.funcao; 
-    const funcaoId = card.dataset.funcaoId;
+    const funcaoId = card.dataset.funcaoId; // ID do banco de dados (PK)
 
-    // CORREÇÃO: Usar o estilo discreto que você deseja
+    // Remove a tag 'Vago' se existir
+    const badgeVago = innerCard.querySelector('.badge.bg-danger');
+    if (badgeVago) badgeVago.remove();
+
+    // Requer o mediumId e mediumNome (variáveis globais definidas no início do script)
     meta.innerHTML = `
       <div class="d-flex align-items-center justify-content-start">
         <span class="nome-medium me-1" data-medium-id="${mediumId}" style="font-weight:500;">${mediumNome}</span>
@@ -439,25 +450,46 @@ function renderOwned(card) {
           <i class="bi bi-x-circle"></i>
         </button>
       </div>`;
+      
+    // Atualiza o dataset para o estado 'Preenchido'
     card.dataset.pessoa = mediumId;
 }
-// ------------------------------------------
 
-  function renderVacant(card) {
-    if (!card) return;
-    const meta = card.querySelector('.text-muted');
-    if (!meta) return;
+/**
+ * Renderiza o card no estado VAGO (com o botão Assumir e a tag 'Vago').
+ * Adiciona a tag 'Vago'.
+ */
+function renderVacant(card) {
+    if (!card) return;
+    const meta = card.querySelector('.text-muted');
+    const innerCard = card.querySelector('.card');
+    if (!meta || !innerCard) return;
 
+    // Obtém os dados da função do card (data-* atributos)
     const funcaoChave = card.dataset.funcao;
-    const funcaoId = card.dataset.funcaoId;
-
+    const funcaoId = card.dataset.funcaoId; 
+    
+    // 1. Atualiza o conteúdo (botão Assumir)
     meta.innerHTML = `<button class="btn btn-sm btn-success btn-assumir" 
                         data-funcao="${funcaoId}" 
                         data-chave="${funcaoChave}" 
+                        data-gira-id="${giraId}"  
                         style="font-size:0.8rem;">Assumir</button>`;
+                        
+    // 2. Adiciona a tag Vago (se já não existir e se não for Cambone, embora esta função não seja usada para Cambones)
+    let badgeVago = innerCard.querySelector('.badge.bg-danger');
+    if (!badgeVago) {
+        badgeVago = document.createElement('span');
+        badgeVago.className = 'badge bg-danger position-absolute';
+        badgeVago.style.cssText = 'right:10px; top:10px; font-size:0.7rem;';
+        badgeVago.textContent = 'Vago';
+        innerCard.prepend(badgeVago); // Insere como primeiro filho
+    }
+
+    // 3. Atualiza o dataset para o estado 'Vago'
     card.dataset.pessoa = '';
-  }
-  // ------------------------------------------
+}
+// ------------------------------------------------------------
 
   // --- 3. FUNÇÃO PRINCIPAL DE CRIAR CARDS ---
   // --- 3. FUNÇÃO PRINCIPAL DE CRIAR CARDS ---
