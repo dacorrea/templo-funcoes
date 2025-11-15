@@ -6,7 +6,6 @@
 {% if gira %}
   <div class="text-start position-relative" style="width:100%; margin-top: 0.5rem;">
 
-    <!-- Linha de setas bem próxima à navbar -->
     <div class="d-flex justify-content-between align-items-center mb-0" style="margin-top:0.3rem;">
       <button id="prevGira" class="btn btn-link p-0" title="Gira anterior"
               style="color:#bbb; background:transparent; border:none;">
@@ -19,7 +18,6 @@
       </button>
     </div>
 
-    <!-- Data e linha -->
     <p id="gira-data" data-gira-id="{{ gira.pk }}" class="mb-1 mt-1"
        style="font-size: 0.9rem; font-weight: 500;
               color: {% if tema == 'exu' %}#ff4d4d{% else %}#0072bb{% endif %};">
@@ -32,7 +30,6 @@
       {{ gira.linha }}
     </h2>
 
-    <!-- Frase fixa -->
     <p class="mb-0"
        style="font-size: 0.9rem;
               color: {% if tema == 'exu' %}#d0d0d0{% else %}#444444{% endif %};">
@@ -48,7 +45,6 @@
 <hr id="sep-1" class="my-4"
     style="border-color: {% if tema == 'exu' %}#660000{% else %}#cccccc{% endif %};">
 
-<!-- BLOCO CAMBONES (template) -->
 <section class="mb-5">
   <h4 id="title-cambones" class="mb-3"
       style="font-size: 1.3rem; font-weight: 600;
@@ -64,14 +60,12 @@
            class="col-6 col-md-4 col-lg-3">
         <div class="card border-0 shadow-sm {% if tema == 'exu' %}bg-light{% else %}bg-body-tertiary{% endif %} h-100 position-relative">
           <div class="card-body p-3 text-start">
-            <!-- título: nome do medium_de_linha (se existir) -->
             <div class="fw-semibold text-dark" style="font-size: 0.95rem;">
               <span class="nome-medium-de-linha" data-medium-id="{{ f.medium_de_linha.id|default:'' }}">
                 {{ f.medium_de_linha.nome|default:"—" }}
               </span>
             </div>
 
-            <!-- meta: pessoa atribuída OU '-' (nunca botão assumir/desistir nem 'Vago') -->
             <div class="text-muted" style="font-size:0.85rem;">
               {% if f.pessoa %}
                 <span class="nome-pessoa" data-pessoa-id="{{ f.pessoa.id }}">{{ f.pessoa.nome }}</span>
@@ -88,7 +82,6 @@
 
 <hr id="sep-2" class="my-4" style="border-color:{% if tema == 'exu' %}#660000{% else %}#ccc{% endif %};">
 
-<!-- BLOCO ORGANIZAÇÃO -->
 <section class="mb-5">
   <h4 id="title-organizacao" class="mb-3"
       style="font-size: 1.3rem; font-weight: 600;
@@ -100,6 +93,7 @@
     {% for f in organizacao %}
       <div id="card-{{ f.chave }}" 
            data-funcao="{{ f.chave }}" 
+           data-funcao-id="{{ f.id }}" {# <-- CORREÇÃO: Adicionando ID do DB #}
            data-pessoa="{{ f.pessoa.id|default:'' }}" 
            class="col-6 col-md-4 col-lg-3">
 
@@ -160,7 +154,6 @@
     style="border-color:{% if tema == 'exu' %}#660000{% else %}#ccc{% endif %};">
 
 
-<!-- BLOCO LIMPEZA -->
 <section class="mb-5">
   <h4 id="title-limpeza" class="mb-3"
       style="font-size: 1.3rem; font-weight: 600;
@@ -172,6 +165,7 @@
     {% for f in limpeza %}
       <div id="card-{{ f.chave }}" 
            data-funcao="{{ f.chave }}" 
+           data-funcao-id="{{ f.id }}" {# <-- CORREÇÃO: Adicionando ID do DB #}
            data-pessoa="{{ f.pessoa.id|default:'' }}" 
            class="col-6 col-md-4 col-lg-3">
 
@@ -234,18 +228,13 @@
 </p>
 </div>
 
-<!-- Toast -->
 <div id="toast-funcao" class="toast-funcao"></div>
 
-<!-- Loader centralizado e delicado -->
 <div id="loading-overlay" aria-hidden="true">
   <div class="loader" role="status" aria-live="polite" aria-atomic="true">
     <span class="visually-hidden">Carregando...</span>
   </div>
 </div>
-
-
-
 <style>
 .toast-funcao.show { visibility: visible; opacity: 1; }
 
